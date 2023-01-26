@@ -8,7 +8,7 @@
 
 #pragma once
 
-namespace ActsExamples {
+namespace Acts {
 /// @class ZScanSeedVertexFinder
 ///
 /// @brief Implements the vertex finder based on the track seeds
@@ -16,7 +16,7 @@ namespace ActsExamples {
 template <typename spacepoint_t>
 class ZScanSeedVertexFinder {
     public:
-        ZScanSeedVertexFinder(ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg);
+        ZScanSeedVertexFinder(Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg);
         ~ZScanSeedVertexFinder() = default;
 
         // TODO: delete default constructor etc.?
@@ -60,21 +60,21 @@ class ZScanSeedVertexFinder {
         struct Triplet{
             Triplet(spacepoint_t aa, spacepoint_t bb, spacepoint_t cc) : a(aa), b(bb), c(cc) {}
             spacepoint_t a,b,c;
-        }
+        };
 
         Config m_cfg;
 
-        std::vector<float> findVertex(std::vector<spacepoint_t>& spacepoints) const;
+        std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
-        std::vector<std::vector<spacepoint_t>> sortSpacepoints(std::vector<spacepoint_t>& spacepoints) const;
+        std::vector<std::vector<spacepoint_t>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
-        std::vector<Triplet> findTriplets(std::vector<std::vector<spacepoint_t>>& sorted_spacepoints);
-        bool isTripletValid(Triplet triplet) const;
+        std::vector<Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
+        bool isTripletValid(const Triplet triplet) const;
 
-        std::vector<int> makeZHist(std::vector<Triplet>& triplets);
+        std::vector<int> makeZHist(const std::vector<Triplet>& triplets) const;
         
-        float findZPeak(std::vector<int>& hist) const;
+        float findZPeak(const std::vector<int>& hist) const;
         
 };
 
-} // namespace ActsExamples
+} // namespace Acts
