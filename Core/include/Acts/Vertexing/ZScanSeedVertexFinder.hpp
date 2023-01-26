@@ -21,11 +21,6 @@ namespace Acts {
 template <typename spacepoint_t>
 class ZScanSeedVertexFinder {
     public:
-        ZScanSeedVertexFinder(Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg);
-        ~ZScanSeedVertexFinder() = default;
-
-        // TODO: delete default constructor etc.?
-
         /// Configuration struct
         struct Config{
             /// @brief Config constructor
@@ -52,13 +47,19 @@ class ZScanSeedVertexFinder {
             /// the detector to use different algorithms for space point construction,
             /// e.g. single-hit space points for pixel-like detectors or double-hit
             /// space points for strip-like detectors.
-            std::vector<std::string> inputSpacePoints;
+            // std::vector<std::string> inputSpacePoints;
             /// Output vertex collection.
-            std::string outputVertices;
+            // std::string outputVertices;
         };
         
         /// Const access to the config
-        const Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& config() const { return m_cfg; }
+        const Config& config() const { return m_cfg; }
+
+        ZScanSeedVertexFinder(Config& cfg);
+        ZScanSeedVertexFinder() {Config cfg; m_cfg = cfg;}
+        ~ZScanSeedVertexFinder() = default;
+
+        // TODO: delete default constructor etc.?
 
 
     private:
