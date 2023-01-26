@@ -24,13 +24,15 @@
 #include "Acts/Vertexing/VertexingOptions.hpp"
 #include "ActsExamples/Framework/RandomNumbers.hpp"
 #include "ActsExamples/Framework/WhiteBoard.hpp"
+#include "ActsExamples/EventData/SimSpacePoint.hpp"
+
 
 #include "VertexingHelpers.hpp"
 
 ActsExamples::ZScanSeedVertexFinderAlgorithm::ZScanSeedVertexFinderAlgorithm(
     const Config& cfg, Acts::Logging::Level lvl)
     : ActsExamples::BareAlgorithm("ZScanSeedVertexFinder", lvl), m_cfg(cfg) {
-  if (m_cfg.inputSeeds.empty()) {
+  if (m_cfg.inputSpacepoints.empty()) {
     throw std::invalid_argument(
         "You have to either provide seeds");
   }
