@@ -111,7 +111,7 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
     //   -------------|-------------
     //                0          -> z
     // ..|11|9|7|5|3|1|0|2|4|6|8|10|12|..
-    hist.reserve(200,0);
+    hist.resize(200,0);
 
     for(auto triplet : triplets)
     {
@@ -142,7 +142,7 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
 
         float z=-1.*slope/cons;
 
-        int zbin=2*int(std::abs(z)/m_cgf.zBinSize);
+        int zbin=2*int(std::abs(z)/m_cfg.zBinSize);
         if(z<0) zbin-=1;
 
         while(zbin > hist.size()-1)
@@ -158,7 +158,7 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
 
 
 template <typename spacepoint_t>
-float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(std::vector<int>& hist) const;
+float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(const std::vector<int>& hist) const;
 {
     int maxh=0;
 
