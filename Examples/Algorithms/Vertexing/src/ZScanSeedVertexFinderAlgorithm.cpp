@@ -48,7 +48,7 @@ ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
     const ActsExamples::AlgorithmContext& ctx) const {
   // retrieve input seeds
   const auto& inputSpacepoints =
-      ctx.eventStore.get<std::vector<ActsExamples::SimSpacePoint>>(m_cfg.inputSpacepoints);
+      ctx.eventStore.get<SimSpacePointContainer>(m_cfg.inputSpacepoints);
 
   // Setup the vertex fitter
   Acts::ZScanSeedVertexFinder<ActsExamples::SimSpacePoint>::Config zscanSeedVtxCfg;
