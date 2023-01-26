@@ -42,16 +42,16 @@ ActsExamples::ZScanSeedVertexFinderAlgorithm::ZScanSeedVertexFinderAlgorithm(
 ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
     const ActsExamples::AlgorithmContext& ctx) const {
   // retrieve input seeds
-  const auto& inputSeeds =
-      ctx.eventStore.get<SeedsContainer>(m_cfg.inputSeeds);
+  const auto& inputSpacepoints =
+      ctx.eventStore.get<std::vector<SimSpacePoint>>(m_cfg.inputSpacepoints);
 
   // Setup the vertex fitter
-  ZScanVertexFinder::Config zscanVtxCfg;
-  ZScanVertexFinder zscanVertexFinder(zscanVtxCfg);
+  ZScanSeedVertexFinder<std::vector<SimSpacePoint>>::Config zscanSeedVtxCfg;
+  ZScanSeedVertexFinder<std::vector<SimSpacePoint>> zscanSeedVertexFinder(zscanSeedVtxCfg);
 
   // find vertices and measure elapsed time
   auto t1 = std::chrono::high_resolution_clock::now();
-  auto result = zscanVertexFinder.findVertex(inputSeeds);
+  auto result = zscanSeedVertexFinder.findVertex(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
 
   ACTS_INFO("Found " << result.size() << " vertices in event");

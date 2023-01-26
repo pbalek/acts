@@ -18,8 +18,8 @@ namespace ActsExamples {
 class ZScanSeedVertexFinderAlgorithm final : public BareAlgorithm {
  public:
   struct Config {
-    /// Optional. Input seeds container.
-    std::string inputSeeds;
+    /// Optional. Input spacepoints container.
+    std::string inputSpacepoints;
     /// Output vertex collection
     std::string outputVertices;
   };

@@ -16,7 +16,7 @@ namespace ActsExamples {
 template <typename spacepoint_t>
 class ZScanSeedVertexFinder {
     public:
-        ZScanSeedVertexFinder(ActsExamples::ZScanSeedVertexFinder::Config<spacepoint_t>& cfg, Acts::Logging::Level lvl);
+        ZScanSeedVertexFinder(ActsExamples::ZScanSeedVertexFinder::Config<spacepoint_t>& cfg);
         ~ZScanSeedVertexFinder() = default;
 
         // TODO: delete default constructor etc.?
@@ -27,13 +27,13 @@ class ZScanSeedVertexFinder {
             ///
             /// @param maxZRdev maximum deviation in z-r plane
             /// @param maxXYdev maximum deviation in x-y plane
-            Config() {}
-            Config(int maxZRdev, int maxXYdev) : maxZRdeviation(maxZRdev), maxXYdeviation(maxXYdev) {}
+            // Config() {}
+            // Config(int maxZRdev, int maxXYdev) : maxZRdeviation(maxZRdev), maxXYdeviation(maxXYdev) {}
 
             // maximum deviation in z-r plane between the first 2 spacepoints and the last 2 spacepoints
-            float maxZRdeviation;
+            float maxZRdeviation = 0.1;
             // maximum deviation in z-r plane between the first 2 spacepoints and the last 2 spacepoints
-            float maxXYdeviation;
+            float maxXYdeviation = 0.1;
 
             // maximum distance in r between two measurements within one seed
             // float deltaRMax = 270 * Acts::UnitConstants::mm;
