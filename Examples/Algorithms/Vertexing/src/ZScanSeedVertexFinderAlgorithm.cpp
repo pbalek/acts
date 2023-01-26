@@ -25,7 +25,7 @@
 #include "ActsExamples/Framework/RandomNumbers.hpp"
 #include "ActsExamples/Framework/WhiteBoard.hpp"
 #include "ActsExamples/EventData/SimSpacePoint.hpp"
-
+#include "Acts/Vertexing/ZScanSeedVertexFinder.hpp"
 
 #include "VertexingHelpers.hpp"
 
