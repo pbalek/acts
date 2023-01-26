@@ -21,6 +21,7 @@ from acts.examples.reconstruction import (
     AmbiguityResolutionConfig,
     addVertexFitting,
     VertexFinder,
+    addSeedVertexFitting,
 )
 
 ttbar_pu200 = False
@@ -110,6 +111,10 @@ addVertexFitting(
     field,
     vertexFinder=VertexFinder.Iterative,
     outputDirRoot=outputDir,
+)
+
+addSeedVertexFitting(
+    s,
 )
 
 s.run()

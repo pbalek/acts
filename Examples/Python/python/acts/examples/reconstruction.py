@@ -1345,3 +1345,53 @@ def addVertexFitting(
         )
 
     return s
+
+def addSeedVertexFitting(
+    s,
+    # outputDirRoot: Optional[Union[Path, str]] = None,
+    logLevel: Optional[acts.logging.Level] = None,
+) -> None:
+
+    from acts.examples import (
+        ZScanSeedVertexFinderAlgorithm
+    )
+
+    customLogLevel = acts.examples.defaultLogging(s, logLevel)
+
+    inputSpacePoints = "spacepoints"
+    outputVertices = "fittedVertices"
+
+    findVertices = ZScanSeedVertexFinderAlgorithm(
+            level=customLogLevel(),
+            inputSpacepoints=trajectories,
+            outputVertices=outputVertices,
+        )
+    s.addAlgorithm(findVertices)
+
+    # if outputDirRoot is not None:
+    #     outputDirRoot = Path(outputDirRoot)
+    #     if not outputDirRoot.exists():
+    #         outputDirRoot.mkdir()
+    #     if associatedParticles == selectedParticles:
+    #         warnings.warn(
+    #             "Using RootVertexPerformanceWriter with smeared particles is not necessarily supported. "
+    #             "Please get in touch with us"
+    #         )
+    #     s.addWriter(
+    #         RootVertexPerformanceWriter(
+    #             level=customLogLevel(),
+    #             inputAllTruthParticles=inputParticles,
+    #             inputSelectedTruthParticles=selectedParticles,
+    #             inputMeasurementParticlesMap="measurement_particles_map",
+    #             inputTrajectories=trajectories,
+    #             inputTrackParameters=trackParameters,
+    #             inputAssociatedTruthParticles=associatedParticles,
+    #             inputVertices=outputVertices,
+    #             minTrackVtxMatchFraction=0.5 if associatedParticles else 0.0,
+    #             inputTime=outputTime,
+    #             treeName="vertexing",
+    #             filePath=str(outputDirRoot / "performance_vertexing.root"),
+    #         )
+    #     )
+
+    return s
