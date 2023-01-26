@@ -168,8 +168,8 @@ float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(const std::vector<int
     }
 
     float z=m_cfg.zBinSize*(maxh/2);
-    if(z%2) z+=m_cfg.zBinSize/2.;
-    else    z-=m_cfg.zBinSize/2.;
+    if(maxh%2) z+=m_cfg.zBinSize/2.;
+    else       z-=m_cfg.zBinSize/2.;
 
     return z;
 }
