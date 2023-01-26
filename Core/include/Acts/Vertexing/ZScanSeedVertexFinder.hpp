@@ -83,3 +83,5 @@ class ZScanSeedVertexFinder {
 };
 
 } // namespace Acts
+
+#include "Acts/Vertexing/ZScanSeedVertexFinder.ipp"
