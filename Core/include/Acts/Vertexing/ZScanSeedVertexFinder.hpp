@@ -64,7 +64,7 @@ class ZScanSeedVertexFinder {
 
         Config m_cfg;
 
-        std::vector<float> findVertex() const;
+        std::vector<float> findVertex(std::vector<spacepoint_t>& spacepoints) const;
 
         std::vector<std::vector<spacepoint_t>> sortSpacepoints(std::vector<spacepoint_t>& spacepoints) const;
 

@@ -22,11 +22,8 @@ ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(ActsExa
 
 
 template <typename spacepoint_t>
-std::vector<float> ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::findVertex()
+std::vector<float> ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::findVertex(std::vector<spacepoint_t>& spacepoints;)
 {
-    std::vector<spacepoint_t> spacepoints;
-    // TODO: get spacepoints from somewhere
-
     std::vector<std::vector<spacepoint_t>> sorted_spacepoints=sortSpacepoints(spacepoints);
 
     std::vector<Triplet> triplets=getTriplets(sorted_spacepoints);
@@ -34,6 +31,8 @@ std::vector<float> ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::findVertex
     std::vector<int> hist=makeZHist(triplets);
 
     float peak=findZPeak(hist);
+
+    return {peak};
 }
 
 
