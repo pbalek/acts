@@ -61,6 +61,7 @@ class ZScanSeedVertexFinder {
 
         // TODO: delete default constructor etc.?
 
+        std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
     private:
         struct Triplet{
@@ -69,8 +70,6 @@ class ZScanSeedVertexFinder {
         };
 
         Acts::ZScanSeedVertexFinder<spacepoint_t>::Config m_cfg;
-
-        std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
         std::vector<std::vector<spacepoint_t>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
