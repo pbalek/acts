@@ -8,26 +8,29 @@
 
 #include "ActsExamples/Vertexing/ZScanSeedVertexFinderAlgorithm.hpp"
 
-#include "Acts/Definitions/Units.hpp"
-#include "Acts/MagneticField/MagneticFieldContext.hpp"
-#include "Acts/Propagator/EigenStepper.hpp"
-#include "Acts/Propagator/Propagator.hpp"
-#include "Acts/Surfaces/PerigeeSurface.hpp"
-#include "Acts/Vertexing/AdaptiveMultiVertexFinder.hpp"
-#include "Acts/Vertexing/AdaptiveMultiVertexFitter.hpp"
-#include "Acts/Vertexing/HelicalTrackLinearizer.hpp"
-#include "Acts/Vertexing/ImpactPointEstimator.hpp"
-#include "Acts/Vertexing/LinearizedTrack.hpp"
-#include "Acts/Vertexing/TrackDensityVertexFinder.hpp"
-#include "Acts/Vertexing/Vertex.hpp"
-#include "Acts/Vertexing/VertexFinderConcept.hpp"
-#include "Acts/Vertexing/VertexingOptions.hpp"
-#include "ActsExamples/Framework/RandomNumbers.hpp"
-#include "ActsExamples/Framework/WhiteBoard.hpp"
+// #include "Acts/Definitions/Units.hpp"
+// #include "Acts/MagneticField/MagneticFieldContext.hpp"
+// #include "Acts/Propagator/EigenStepper.hpp"
+// #include "Acts/Propagator/Propagator.hpp"
+// #include "Acts/Surfaces/PerigeeSurface.hpp"
+// #include "Acts/Vertexing/AdaptiveMultiVertexFinder.hpp"
+// #include "Acts/Vertexing/AdaptiveMultiVertexFitter.hpp"
+// #include "Acts/Vertexing/HelicalTrackLinearizer.hpp"
+// #include "Acts/Vertexing/ImpactPointEstimator.hpp"
+// #include "Acts/Vertexing/LinearizedTrack.hpp"
+// #include "Acts/Vertexing/TrackDensityVertexFinder.hpp"
+// #include "Acts/Vertexing/Vertex.hpp"
+// #include "Acts/Vertexing/VertexFinderConcept.hpp"
+// #include "Acts/Vertexing/VertexingOptions.hpp"
+// #include "ActsExamples/Framework/RandomNumbers.hpp"
+// #include "ActsExamples/Framework/WhiteBoard.hpp"
 #include "ActsExamples/EventData/SimSpacePoint.hpp"
 #include "Acts/Vertexing/ZScanSeedVertexFinder.hpp"
 
-#include "VertexingHelpers.hpp"
+// #include "VertexingHelpers.hpp"
+
+#include <vector>
+#include <chrono>
 
 ActsExamples::ZScanSeedVertexFinderAlgorithm::ZScanSeedVertexFinderAlgorithm(
     const Config& cfg, Acts::Logging::Level lvl)

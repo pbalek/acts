@@ -8,6 +8,11 @@
 
 #pragma once
 
+#include "Acts/Definitions/Units.hpp"
+
+#include <vector>
+#include <string>
+
 namespace Acts {
 /// @class ZScanSeedVertexFinder
 ///
@@ -53,7 +58,7 @@ class ZScanSeedVertexFinder {
         };
         
         /// Const access to the config
-        const Config& config() const { return m_cfg; }
+        const Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& config() const { return m_cfg; }
 
 
     private:
@@ -62,7 +67,7 @@ class ZScanSeedVertexFinder {
             spacepoint_t a,b,c;
         };
 
-        Config m_cfg;
+        Acts::ZScanSeedVertexFinder<spacepoint_t>::Config m_cfg;
 
         std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 

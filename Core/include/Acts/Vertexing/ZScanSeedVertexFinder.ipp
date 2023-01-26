@@ -6,6 +6,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include <cmath>
+#include "Acts/Vertexing/ZScanSeedVertexFinder.hpp"
+
 template <typename spacepoint_t>
 Acts::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg)
     : m_cfg(cfg)
@@ -26,7 +29,7 @@ std::vector<float> Acts::ZScanSeedVertexFinder<spacepoint_t>::findVertex(const s
 {
     std::vector<std::vector<spacepoint_t>> sorted_spacepoints=sortSpacepoints(spacepoints);
 
-    std::vector<Triplet> triplets=getTriplets(sorted_spacepoints);
+    std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets=getTriplets(sorted_spacepoints);
 
     std::vector<int> hist=makeZHist(triplets);
 
@@ -55,9 +58,9 @@ std::vector<std::vector<spacepoint_t>> Acts::ZScanSeedVertexFinder<spacepoint_t>
 
 
 template <typename spacepoint_t>
-std::vector<Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const
+std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::et> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const
 {
-    std::vector<Triplet> triplets;
+    std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
     for(auto near_sp : sorted_spacepoint.at(0))
     {
@@ -65,7 +68,7 @@ std::vector<Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(con
         {
             for(auto far_sp : sorted_spacepoint.at(2))
             {
-                Triplet tr(near_sp, middle_sp, far_sp);
+                Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet tr(near_sp, middle_sp, far_sp);
                 if(isValidTriplet(tr)) triplets.push_back(tr);
             }
         }
@@ -76,7 +79,7 @@ std::vector<Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(con
 
 
 template <typename spacepoint_t>
-bool Acts::ZScanSeedVertexFinder<spacepoint_t>::isTripletValid(const Triplet triplet) const
+bool Acts::ZScanSeedVertexFinder<spacepoint_t>::isTripletValid(const Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet triplet) const
 {
     // TODO: check all quadrants
    
@@ -101,7 +104,7 @@ bool Acts::ZScanSeedVertexFinder<spacepoint_t>::isTripletValid(const Triplet tri
 
 
 template <typename spacepoint_t>
-std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std::vector<Triplet>& triplets) const
+std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const
 {
     std::vector<int> hist;
     //   -------------|-------------

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "Acts/Definitions/Algebra.hpp"
 #include "ActsExamples/Framework/BareAlgorithm.hpp"
 
 #include <string>
