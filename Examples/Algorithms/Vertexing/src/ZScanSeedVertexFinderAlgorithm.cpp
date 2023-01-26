@@ -23,7 +23,7 @@
 // #include "Acts/Vertexing/VertexFinderConcept.hpp"
 // #include "Acts/Vertexing/VertexingOptions.hpp"
 // #include "ActsExamples/Framework/RandomNumbers.hpp"
-// #include "ActsExamples/Framework/WhiteBoard.hpp"
+#include "ActsExamples/Framework/WhiteBoard.hpp"
 #include "ActsExamples/EventData/SimSpacePoint.hpp"
 #include "Acts/Vertexing/ZScanSeedVertexFinder.hpp"
 
