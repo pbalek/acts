@@ -47,8 +47,8 @@ std::vector<std::vector<spacepoint_t>> Acts::ZScanSeedVertexFinder<spacepoint_t>
 
     for(auto sp : spacepoints)
     {
-        if(sp.radius() < m_cfg.rMinMiddle) near_spacepoints.push_back(sp);
-        else if(sp.radius() < m_cfg.rMaxMiddle) middle_spacepoints.push_back(sp);
+        if(sp.r() < m_cfg.rMinMiddle) near_spacepoints.push_back(sp);
+        else if(sp.r() < m_cfg.rMaxMiddle) middle_spacepoints.push_back(sp);
         else far_spacepoints.push_back(sp);
     }
 
@@ -123,19 +123,19 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         
         float Sz=0.,Sr=0.,Szz=0.,Szr=0.;
         Sz=a.z();
-        Sr=a.radius();
+        Sr=a.r();
         Szz=a.z()*a.z();
-        Szr=a.z()*a.radius();
+        Szr=a.z()*a.r();
 
         Sz+=b.z();
-        Sr+=b.radius();
+        Sr+=b.r();
         Szz+=b.z()*b.z();
-        Szr+=b.z()*b.radius();
+        Szr+=b.z()*b.r();
 
         Sz+=c.z();
-        Sr+=c.radius();
+        Sr+=c.r();
         Szz+=c.z()*c.z();
-        Szr+=c.z()*c.radius();
+        Szr+=c.z()*c.r();
 
         float slope=(3*Szr - Sz*Sr)/(3*Szz - Sz*Sz);
         float cons=(Sr-slope*Sz)/3.;
@@ -167,9 +167,9 @@ float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(const std::vector<int
         if(hist.at(h) > hist.at(maxh)) maxh=h;
     }
 
-    float z=m_cgf.zBinSize*(maxh/2);
-    if(z%2) z+=m_cgf.zBinSize/2.;
-    else    z-=m_cgf.zBinSize/2.;
+    float z=m_cfg.zBinSize*(maxh/2);
+    if(z%2) z+=m_cfg.zBinSize/2.;
+    else    z-=m_cfg.zBinSize/2.;
 
     return z;
 }
