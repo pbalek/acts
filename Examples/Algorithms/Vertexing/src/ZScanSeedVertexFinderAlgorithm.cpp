@@ -48,8 +48,8 @@ ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
       ctx.eventStore.get<std::vector<SimSpacePoint>>(m_cfg.inputSpacepoints);
 
   // Setup the vertex fitter
-  ZScanSeedVertexFinder<std::vector<SimSpacePoint>>::Config zscanSeedVtxCfg;
-  ZScanSeedVertexFinder<std::vector<SimSpacePoint>> zscanSeedVertexFinder(zscanSeedVtxCfg);
+  ZScanSeedVertexFinder<SimSpacePoint>::Config zscanSeedVtxCfg;
+  ZScanSeedVertexFinder<SimSpacePoint> zscanSeedVertexFinder(zscanSeedVtxCfg);
 
   // find vertices and measure elapsed time
   auto t1 = std::chrono::high_resolution_clock::now();

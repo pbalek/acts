@@ -16,7 +16,7 @@ namespace ActsExamples {
 template <typename spacepoint_t>
 class ZScanSeedVertexFinder {
     public:
-        ZScanSeedVertexFinder(ActsExamples::ZScanSeedVertexFinder::Config<spacepoint_t>& cfg);
+        ZScanSeedVertexFinder(ActsExamples::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg);
         ~ZScanSeedVertexFinder() = default;
 
         // TODO: delete default constructor etc.?
@@ -50,7 +50,7 @@ class ZScanSeedVertexFinder {
             std::vector<std::string> inputSpacePoints;
             /// Output vertex collection.
             std::string outputVertices;
-        }
+        };
         
         /// Const access to the config
         const Config& config() const { return m_cfg; }
@@ -75,6 +75,6 @@ class ZScanSeedVertexFinder {
         
         float findZPeak(std::vector<int>& hist) const;
         
-}
+};
 
 } // namespace ActsExamples
