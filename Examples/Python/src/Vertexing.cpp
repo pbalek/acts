@@ -47,6 +47,10 @@ void addVertexing(Context& ctx) {
       ActsExamples::VertexFitterAlgorithm, mex, "VertexFitterAlgorithm",
       inputTrackParameters, inputTrajectories, inputProtoVertices,
       outputVertices, bField, doConstrainedFit, constraintPos, constraintCov);
+
+  ACTS_PYTHON_DECLARE_ALGORITH(
+      ActsExamples::ZScanSeedVertexFinderAlgorithm, mex, "ZScanSeedVertexFinderAlgorithm",
+      inputSpacepoints, outputVertices);
 }
 
 }  // namespace Acts::Python

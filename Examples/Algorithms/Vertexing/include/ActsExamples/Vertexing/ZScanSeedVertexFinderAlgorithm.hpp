@@ -23,7 +23,7 @@ class ZScanSeedVertexFinderAlgorithm final : public BareAlgorithm {
     std::string outputVertices;
   };
 
-  ZScanSeedVertexFinderAlgorithm(const ActsExamples::ZScanSeedVertexFinderAlgorithm::Config& cfg, Acts::Logging::Level lvl);
+  ZScanSeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
 
   /// Find vertices.
   ///
