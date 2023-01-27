@@ -147,14 +147,15 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         float cons=(Sr-slope*Sz)/3.;
 
         float z=-1.*slope/cons;
-        std::cout<<"this triplet has z = "<<z<<std::endl;
 
         unsigned int zbin=2*(unsigned int)(std::abs(z)/m_cfg.zBinSize);
         if(z<0) zbin-=1;
+        std::cout<<"this triplet has z = "<<z<<" and will go to the bin "<<zbin<<std::endl;
 
         while(zbin > hist.size()-1)
         {
             hist.resize(2*hist.size(),0);
+            std::cout<<"new hist size = "<<hist.size()<<std::endl;
         }
 
         ++hist.at(zbin);
