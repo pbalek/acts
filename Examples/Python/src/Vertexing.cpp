@@ -49,7 +49,7 @@ void addVertexing(Context& ctx) {
       inputTrackParameters, inputTrajectories, inputProtoVertices,
       outputVertices, bField, doConstrainedFit, constraintPos, constraintCov);
 
-  ACTS_PYTHON_DECLARE_ALGORITH(
+  ACTS_PYTHON_DECLARE_ALGORITHM(
       ActsExamples::ZScanSeedVertexFinderAlgorithm, mex, "ZScanSeedVertexFinderAlgorithm",
       inputSpacepoints, outputVertices);
 }
