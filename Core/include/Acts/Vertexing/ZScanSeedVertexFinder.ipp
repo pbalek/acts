@@ -146,7 +146,7 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         float slope=(3*Szr - Sz*Sr)/(3*Szz - Sz*Sz);
         float cons=(Sr-slope*Sz)/3.;
 
-        float z=-1.*slope/cons;
+        float z=-1.*cons/slope;
         if(std::fabs(z)>m_cfg.maxZPosition) continue;
 
         std::cout<<" spacepoint a "<<a.r()<<" "<<a.z()<<std::endl;
