@@ -1346,7 +1346,7 @@ def addVertexFitting(
 
     return s
 
-def addSeedVertexFitting(
+def addSeedVertexFinding(
     s,
     # outputDirRoot: Optional[Union[Path, str]] = None,
     logLevel: Optional[acts.logging.Level] = None,
