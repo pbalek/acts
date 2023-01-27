@@ -152,9 +152,11 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         std::cout<<" spacepoint a "<<a.r()<<" "<<a.z()<<std::endl;
         std::cout<<" spacepoint b "<<b.r()<<" "<<b.z()<<std::endl;
         std::cout<<" spacepoint c "<<c.r()<<" "<<c.z()<<std::endl;
+        std::cout<<" fit is r = "<<slope<<"*z + "<<cons<<std::endl;
 
         unsigned int zbin=2*(unsigned int)(std::fabs(z)/m_cfg.zBinSize);
         if(z<0) ++zbin;
+        
         std::cout<<"this triplet has z = "<<z<<" and will go to the bin "<<zbin<<std::endl;
 
         while(zbin > hist.size()-1)
