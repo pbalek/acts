@@ -73,10 +73,10 @@ class ZScanSeedVertexFinder {
 
         std::vector<std::vector<spacepoint_t>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
-        std::vector<typename Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
-        bool isTripletValid(const Triplet triplet) const;
+        std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
+        bool isTripletValid(const Acts::ZScanSeedVertexFinder<spacepoint_t>::triplet) const;
 
-        std::vector<int> makeZHist(const std::vector<Triplet>& triplets) const;
+        std::vector<int> makeZHist(const std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const;
         
         float findZPeak(const std::vector<int>& hist) const;
         
