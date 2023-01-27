@@ -1363,7 +1363,7 @@ def addSeedVertexFinding(
 
     findVertices = ZScanSeedVertexFinderAlgorithm(
             level=customLogLevel(),
-            inputSpacepoints=trajectories,
+            inputSpacepoints=inputSpacePoints,
             outputVertices=outputVertices,
         )
     s.addAlgorithm(findVertices)
