@@ -59,7 +59,7 @@ ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
   auto result = zscanSeedVertexFinder.findVertex(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  ACTS_INFO("Found " << result.size() << " vertices in event in "<<(t2-t1).count()<<" seconds.");
+  ACTS_INFO("Found " << result.size() << " vertices in event in "<<(t2-t1).count()/1e9<<" seconds.");
   for(auto r : result)
   {
     ACTS_INFO("Found vertex at z = " << r <<"mm");
