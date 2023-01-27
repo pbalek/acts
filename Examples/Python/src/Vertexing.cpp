@@ -11,6 +11,7 @@
 #include "ActsExamples/Vertexing/IterativeVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/TutorialVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/VertexFitterAlgorithm.hpp"
+#include "ActsExamples/Vertexing/ZScanSeedVertexFinderAlgorithm.hpp"
 
 #include <memory>
 
