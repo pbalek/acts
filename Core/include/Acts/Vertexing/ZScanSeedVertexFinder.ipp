@@ -70,7 +70,7 @@ std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::Z
             for(auto far_sp : sorted_spacepoints.at(2))
             {
                 Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet tr(near_sp, middle_sp, far_sp);
-                if(isValidTriplet(tr)) triplets.push_back(tr);
+                if(isTripletValid(tr)) triplets.push_back(tr);
             }
         }
     }
