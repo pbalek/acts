@@ -184,7 +184,7 @@ float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(const std::vector<int
 
     std::vector<int> hpeak{maxh-2,maxh,maxh+2};
     if(maxh==0) hpeak.at(0)=1;
-    if(maxh==1) hpeak.at(2)=0;
+    if(maxh==1) hpeak.at(0)=0;
 
     float zsum=0.,zpos=0.;
     for(auto h : hpeak)
