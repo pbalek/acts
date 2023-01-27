@@ -23,33 +23,20 @@ class ZScanSeedVertexFinder {
     public:
         /// Configuration struct
         struct Config{
-            /// @brief Config constructor
-            ///
-            /// @param maxZRdev maximum deviation in z-r plane
-            /// @param maxXYdev maximum deviation in x-y plane
-            // Config() {}
-            // Config(int maxZRdev, int maxXYdev) : maxZRdeviation(maxZRdev), maxXYdeviation(maxXYdev) {}
-
             // maximum deviation in z-r plane between the first 2 spacepoints and the last 2 spacepoints
             float maxZRdeviation = 0.1;
             // maximum deviation in z-r plane between the first 2 spacepoints and the last 2 spacepoints
             float maxXYdeviation = 0.1;
 
-            // maximum distance in r between two measurements within one seed
-            // float deltaRMax = 270 * Acts::UnitConstants::mm;
-            // range defined by rMinMiddle and rMaxMiddle
+            // thresholds for near, middle, and far spacepoints
             float rMinMiddle = 60.f * Acts::UnitConstants::mm;
             float rMaxMiddle = 120.f * Acts::UnitConstants::mm;
 
+            // bin size for the histogram
             float zBinSize = 1.f * Acts::UnitConstants::mm;
 
-            /// We allow multiple space point collections to allow different parts of
-            /// the detector to use different algorithms for space point construction,
-            /// e.g. single-hit space points for pixel-like detectors or double-hit
-            /// space points for strip-like detectors.
-            // std::vector<std::string> inputSpacePoints;
-            /// Output vertex collection.
-            // std::string outputVertices;
+            // maximum z position of the vertex
+            float maxZPosition = 300.f * Acts::UnitConstants::mm;
         };
         
         /// Const access to the config

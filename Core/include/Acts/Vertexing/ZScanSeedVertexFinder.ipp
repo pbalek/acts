@@ -147,8 +147,13 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         float cons=(Sr-slope*Sz)/3.;
 
         float z=-1.*slope/cons;
+        if(std::fabs(z)>m_cfg.maxZPosition) continue;
 
-        unsigned int zbin=2*(unsigned int)(std::abs(z)/m_cfg.zBinSize);
+        std::cout<<" spacepoint a "<<a.x()<<" "<<a.y()<<" "<<a.z()<<std::endl;
+        std::cout<<" spacepoint b "<<b.x()<<" "<<b.y()<<" "<<b.z()<<std::endl;
+        std::cout<<" spacepoint c "<<c.x()<<" "<<c.y()<<" "<<c.z()<<std::endl;
+
+        unsigned int zbin=2*(unsigned int)(std::fabs(z)/m_cfg.zBinSize);
         if(z<0) ++zbin;
         std::cout<<"this triplet has z = "<<z<<" and will go to the bin "<<zbin<<std::endl;
 
