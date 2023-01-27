@@ -113,8 +113,8 @@ addVertexFitting(
     outputDirRoot=outputDir,
 )
 
-addSeedVertexFinding(
-    s,
-)
+# addSeedVertexFinding(
+#     s,
+# )
 
 s.run()
