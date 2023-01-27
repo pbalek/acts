@@ -73,7 +73,7 @@ class ZScanSeedVertexFinder {
 
         std::vector<std::vector<spacepoint_t>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
-        std::vector<Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
+        std::vector<typename Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
         bool isTripletValid(const Triplet triplet) const;
 
         std::vector<int> makeZHist(const std::vector<Triplet>& triplets) const;

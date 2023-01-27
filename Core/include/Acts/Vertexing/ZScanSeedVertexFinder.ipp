@@ -59,7 +59,7 @@ std::vector<std::vector<spacepoint_t>> Acts::ZScanSeedVertexFinder<spacepoint_t>
 
 
 template <typename spacepoint_t>
-std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const
+std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const
 {
     std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
