@@ -149,9 +149,9 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         float z=-1.*slope/cons;
         if(std::fabs(z)>m_cfg.maxZPosition) continue;
 
-        std::cout<<" spacepoint a "<<a.x()<<" "<<a.y()<<" "<<a.z()<<std::endl;
-        std::cout<<" spacepoint b "<<b.x()<<" "<<b.y()<<" "<<b.z()<<std::endl;
-        std::cout<<" spacepoint c "<<c.x()<<" "<<c.y()<<" "<<c.z()<<std::endl;
+        std::cout<<" spacepoint a "<<a.r()<<" "<<a.z()<<std::endl;
+        std::cout<<" spacepoint b "<<b.r()<<" "<<b.z()<<std::endl;
+        std::cout<<" spacepoint c "<<c.r()<<" "<<c.z()<<std::endl;
 
         unsigned int zbin=2*(unsigned int)(std::fabs(z)/m_cfg.zBinSize);
         if(z<0) ++zbin;
