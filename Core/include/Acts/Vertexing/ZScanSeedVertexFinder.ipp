@@ -149,7 +149,7 @@ std::vector<int> Acts::ZScanSeedVertexFinder<spacepoint_t>::makeZHist(const std:
         float z=-1.*slope/cons;
 
         unsigned int zbin=2*(unsigned int)(std::abs(z)/m_cfg.zBinSize);
-        if(z<0) zbin-=1;
+        if(z<0) ++zbin;
         std::cout<<"this triplet has z = "<<z<<" and will go to the bin "<<zbin<<std::endl;
 
         while(zbin > hist.size()-1)
