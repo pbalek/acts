@@ -63,11 +63,11 @@ std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::Z
 {
     std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
-    for(auto near_sp : sorted_spacepoint.at(0))
+    for(auto near_sp : sorted_spacepoints.at(0))
     {
-        for(auto middle_sp : sorted_spacepoint.at(1))
+        for(auto middle_sp : sorted_spacepoints.at(1))
         {
-            for(auto far_sp : sorted_spacepoint.at(2))
+            for(auto far_sp : sorted_spacepoints.at(2))
             {
                 Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet tr(near_sp, middle_sp, far_sp);
                 if(isValidTriplet(tr)) triplets.push_back(tr);
