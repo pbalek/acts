@@ -32,7 +32,7 @@ std::vector<float> Acts::ZScanSeedVertexFinder<spacepoint_t>::findVertex(const s
     std::cout<<" we have " << spacepoints.size() <<" spacepoints"<<std::endl;
     std::vector<std::vector<spacepoint_t>> sorted_spacepoints=sortSpacepoints(spacepoints);
 
-    std::cout<<" we have " << spacepoints.at(0).size <<" near spacepoints, " << spacepoints.at(1).size <<" middle spacepoints, " << spacepoints.at(2).size <<" far spacepoints"<<std::endl;
+    std::cout<<" we have " << sorted_spacepoints.at(0).size <<" near spacepoints, " << sorted_spacepoints.at(1).size <<" middle spacepoints, " << sorted_spacepoints.at(2).size <<" far spacepoints"<<std::endl;
     std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets=findTriplets(sorted_spacepoints);
 
     std::cout<<" we have " << triplets.size() <<" triplets"<<std::endl;
