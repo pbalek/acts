@@ -182,9 +182,20 @@ float Acts::ZScanSeedVertexFinder<spacepoint_t>::findZPeak(const std::vector<int
         if(hist.at(h) > hist.at(maxh)) maxh=h;
     }
 
-    float z=m_cfg.zBinSize*(maxh/2);
-    if(maxh%2) z+=m_cfg.zBinSize/2.;
-    else       z-=m_cfg.zBinSize/2.;
+    std::vector<int> hpeak{maxh-2,maxh,maxh+2};
+    if(maxh==0) hpeak.at(0)=1;
+    if(maxh==1) hpeak.at(2)=0;
 
-    return z;
+    float zsum=0.,zpos=0.;
+    for(auto h : hpeak)
+    {
+        float z=m_cfg.zBinSize*(h/2);
+        if(h%2) z+=m_cfg.zBinSize/2.;
+        else    z-=m_cfg.zBinSize/2.;
+
+        zpos+=z*hist.at(h);
+        zsum+=hist.at(h);
+    }
+
+    return zpos/zsum;
 }
