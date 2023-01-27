@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <utility>
+#include <iostream>
 
 template <typename spacepoint_t>
 Acts::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg)
@@ -28,13 +29,13 @@ Acts::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(Acts::ZScanSeed
 template <typename spacepoint_t>
 std::vector<float> Acts::ZScanSeedVertexFinder<spacepoint_t>::findVertex(const std::vector<spacepoint_t>& spacepoints) const
 {
-    ACTS_INFO(" we have " << spacepoints.size() <<" spacepoints");
+    std::cout<<" we have " << spacepoints.size() <<" spacepoints"<<std::endl;
     std::vector<std::vector<spacepoint_t>> sorted_spacepoints=sortSpacepoints(spacepoints);
 
-    ACTS_INFO(" we have " << spacepoints.at(0).size <<" near spacepoints, " << spacepoints.at(1).size <<" middle spacepoints, " << spacepoints.at(2).size <<" far spacepoints");
+    std::cout<<" we have " << spacepoints.at(0).size <<" near spacepoints, " << spacepoints.at(1).size <<" middle spacepoints, " << spacepoints.at(2).size <<" far spacepoints"<<std::endl;
     std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets=findTriplets(sorted_spacepoints);
 
-    ACTS_INFO(" we have " << triplets.size() <<" triplets");
+    std::cout<<" we have " << triplets.size() <<" triplets"<<std::endl;
     if(triplets.empty()) return {};
 
     std::vector<int> hist=makeZHist(triplets);
