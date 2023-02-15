@@ -25,7 +25,7 @@ class ZScanSeedVertexFinderAlgorithm final : public BareAlgorithm {
 
   ZScanSeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
 
-  /// Find vertices.
+  /// @brief Find a vertex using spacepoints
   ///
   /// @param ctx is the algorithm context with event information
   /// @return a process code indication success or failure

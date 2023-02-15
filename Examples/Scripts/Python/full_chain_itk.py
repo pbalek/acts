@@ -115,6 +115,8 @@ addVertexFitting(
 
 addSeedVertexFinding(
     s,
+    outputDirRoot=outputDir,
+    outputVertices="fittedSeedVertices"
 )
 
 s.run()

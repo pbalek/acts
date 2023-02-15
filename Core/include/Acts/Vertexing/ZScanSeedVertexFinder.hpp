@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Acts/Definitions/Units.hpp"
+#include "Acts/Utilities/Logger.hpp"
 
 #include <vector>
 #include <string>
@@ -17,7 +18,10 @@ namespace Acts {
 /// @class ZScanSeedVertexFinder
 ///
 /// @brief Implements the vertex finder based on the track seeds
-
+/// 0. Assumes there is only 1 vertex and that it has a high multiplicity
+/// 1. Sorts out all the input spacepoints based on their distance to the z-axis
+/// 2. Create seeds from 3 spacepoints with a small deviation from a striagh line
+/// 3. Returns vertex position as (0,0,Z), where "Z" is the peak where seeds point to
 template <typename spacepoint_t>
 class ZScanSeedVertexFinder {
     public:
@@ -42,31 +46,61 @@ class ZScanSeedVertexFinder {
         /// Const access to the config
         const Config& config() const { return m_cfg; }
 
-        ZScanSeedVertexFinder(Config& cfg);
-        ZScanSeedVertexFinder() {Config cfg; m_cfg = cfg;}
+        /// @brief Constructor
+        ///
+        /// @param cfg Configuration object 
+        /// @param logger Logging instance
+        ZScanSeedVertexFinder(const Config& cfg,
+                              std::unique_ptr<const Logger> lgr = getDefaultLogger("ZScanSeedVertexFinder", Logging::DEBUG));
+
+        /// @brief Destructor
         ~ZScanSeedVertexFinder() = default;
 
-        // TODO: delete default constructor etc.?
-
+        /// @brief Finds the vertex based on the provided spacepoints
+        /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
+        /// @return Position of the vertex along z-axis
         std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
     private:
+        /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector
         struct Triplet{
-            Triplet(spacepoint_t aa, spacepoint_t bb, spacepoint_t cc) : a(aa), b(bb), c(cc) {}
-            spacepoint_t a,b,c;
+            Triplet(const spacepoint_t* aa, const spacepoint_t* bb, const spacepoint_t* cc) : a(aa), b(bb), c(cc) {}
+            const spacepoint_t *a, *b, *c;
         };
 
-        Acts::ZScanSeedVertexFinder<spacepoint_t>::Config m_cfg;
+        /// Configuration instance 
+        Config m_cfg;
 
-        std::vector<std::vector<spacepoint_t>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
+        /// @brief Sorts spacepoints into a separate vectors for near, middle, and far spacepoints
+        /// @param spacepoints Vector of the input spacepoints;
+        /// @return Vector of vectors for each set of spacepoints
+        std::vector<std::vector<const spacepoint_t*>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
-        std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> findTriplets(const std::vector<std::vector<spacepoint_t>>& sorted_spacepoints) const;
-        bool isTripletValid(const Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet triplet) const;
+        /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints
+        /// @param sorted_spacepoints Vector of input vector of vectors for each set of spacepoints
+        /// @return Vector of valid triplets
+        std::vector<Triplet> findTriplets(const std::vector<std::vector<const spacepoint_t*>>& sorted_spacepoints) const;
 
-        std::vector<int> makeZHist(const std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const;
+        /// @brief Validate the triplet based on "maxZRdeviation" and "maxXYdeviation"
+        /// @param triplet A single triplet to be validated
+        /// @return True if the deviations are within configured ranges
+        bool isTripletValid(const Triplet triplet) const;
+
+        /// @brief Creates a vector pretending to be a histogram of the estimated origins of the triplets
+        /// @param triplets Vector of all valid triplets
+        /// @return Histogram of the estimated origins
+        std::vector<int> makeZHist(const std::vector<Triplet>& triplets) const;
         
+        /// @brief Finds a single peak in the histogram
+        /// @param hist Histograms with (preferenbly) a single peak
+        /// @return Position along z-axis of the peak, taking into account "zBinSize"
         float findZPeak(const std::vector<int>& hist) const;
-        
+
+        /// Logging instance
+        std::unique_ptr<const Logger> m_logger;
+
+        /// Private access to logging instance
+        const Logger& logger() const { return *m_logger; }
 };
 
 } // namespace Acts

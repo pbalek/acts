@@ -35,12 +35,11 @@
 ActsExamples::ZScanSeedVertexFinderAlgorithm::ZScanSeedVertexFinderAlgorithm(
     const Config& cfg, Acts::Logging::Level lvl)
     : ActsExamples::BareAlgorithm("ZScanSeedVertexFinder", lvl), m_cfg(cfg) {
-  if (m_cfg.inputSpacepoints.empty()) {
-    throw std::invalid_argument(
-        "You have to either provide seeds");
+  if (m_cfg.inputSpacepoints.empty()) { 
+    ACTS_ERROR("You have to either provide seeds");
   }
   if (m_cfg.outputVertices.empty()) {
-    throw std::invalid_argument("Missing output vertices collection");
+    ACTS_ERROR("Missing output vertices collection");
   }
 }
 
@@ -59,28 +58,13 @@ ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
   auto result = zscanSeedVertexFinder.findVertex(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
 
-  ACTS_INFO("Found " << result.size() << " vertices in event in "<<(t2-t1).count()/1e9<<" seconds.");
+  ACTS_INFO("Found " << result.size() << " vertices in the event in "<<(t2-t1).count()/1e9<<" seconds.");
   for(auto r : result)
   {
     ACTS_INFO("Found vertex at z = " << r <<"mm");
   }
 
-  // std::vector<Acts::Vertex<Acts::BoundTrackParameters>> vertices;
-  // if (result.ok()) {
-  //   vertices = std::move(result.value());
-  // } else {
-  //   ACTS_ERROR("Error in vertex finder: " << result.error().message());
-  // }
-
-  // show some debug output
-  // ACTS_INFO("Found " << vertices.size() << " vertices in event");
-  // for (const auto& vtx : vertices) {
-  //   ACTS_INFO("Found vertex at " << vtx.fullPosition().transpose() << " with "
-  //                                << vtx.tracks().size() << " tracks.");
-  // }
-
-  // store found vertices
-  // ctx.eventStore.add(m_cfg.outputVertices, std::move(vertices));
+  ctx.eventStore.add(m_cfg.outputVertices, std::move(result));
   
   return ActsExamples::ProcessCode::SUCCESS;
 }
