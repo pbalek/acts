@@ -18,7 +18,7 @@
 #include "ActsExamples/EventData/IndexSourceLink.hpp"
 #include "ActsExamples/EventData/Measurement.hpp"
 #include "ActsExamples/EventData/Track.hpp"
-#include "ActsExamples/Framework/BareAlgorithm.hpp"
+#include "ActsExamples/Framework/IAlgorithm.hpp"
 #include "ActsExamples/Framework/ProcessCode.hpp"
 #include "ActsExamples/MagneticField/MagneticField.hpp"
 
@@ -30,16 +30,13 @@
 
 namespace ActsExamples {
 
-class TrackFindingAlgorithm final : public BareAlgorithm {
+class TrackFindingAlgorithm final : public IAlgorithm {
  public:
   /// Track finder function that takes input measurements, initial trackstate
   /// and track finder options and returns some track-finder-specific result.
   using TrackFinderOptions =
       Acts::CombinatorialKalmanFilterOptions<IndexSourceLinkAccessor::Iterator,
                                              Acts::VectorMultiTrajectory>;
-  using TrackContainer =
-      Acts::TrackContainer<Acts::VectorTrackContainer,
-                           Acts::VectorMultiTrajectory, std::shared_ptr>;
   using TrackFinderResult =
       Acts::Result<std::vector<TrackContainer::TrackProxy>>;
 
@@ -70,7 +67,7 @@ class TrackFindingAlgorithm final : public BareAlgorithm {
     /// Input initial track parameter estimates for for each proto track.
     std::string inputInitialTrackParameters;
     /// Output find trajectories collection.
-    std::string outputTrajectories;
+    std::string outputTracks;
     /// Type erased track finder function.
     std::shared_ptr<TrackFinderFunction> findTracks;
     /// CKF measurement selector config

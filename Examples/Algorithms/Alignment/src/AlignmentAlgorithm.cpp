@@ -17,7 +17,7 @@
 
 ActsExamples::AlignmentAlgorithm::AlignmentAlgorithm(Config cfg,
                                                      Acts::Logging::Level lvl)
-    : ActsExamples::BareAlgorithm("AlignmentAlgorithm", lvl),
+    : ActsExamples::IAlgorithm("AlignmentAlgorithm", lvl),
       m_cfg(std::move(cfg)) {
   if (m_cfg.inputMeasurements.empty()) {
     throw std::invalid_argument("Missing input measurement collection");
@@ -52,7 +52,8 @@ ActsExamples::ProcessCode ActsExamples::AlignmentAlgorithm::execute(
 
   // Consistency cross checks
   if (protoTracks.size() != initialParameters.size()) {
-    ACTS_FATAL("Inconsistent number of proto tracks and parameters");
+    ACTS_FATAL("Inconsistent number of proto tracks and parameters "
+               << protoTracks.size() << " vs " << initialParameters.size());
     return ProcessCode::ABORT;
   }
 
@@ -114,9 +115,8 @@ ActsExamples::ProcessCode ActsExamples::AlignmentAlgorithm::execute(
 
   // Set the alignment options
   ActsAlignment::AlignmentOptions<TrackFitterOptions> alignOptions(
-      kfOptions, m_cfg.alignedTransformUpdater, Acts::LoggerWrapper{logger()},
-      m_cfg.alignedDetElements, m_cfg.chi2ONdfCutOff, m_cfg.deltaChi2ONdfCutOff,
-      m_cfg.maxNumIterations);
+      kfOptions, m_cfg.alignedTransformUpdater, m_cfg.alignedDetElements,
+      m_cfg.chi2ONdfCutOff, m_cfg.deltaChi2ONdfCutOff, m_cfg.maxNumIterations);
 
   ACTS_DEBUG("Invoke track-based alignment with " << numTracksUsed
                                                   << " input tracks");

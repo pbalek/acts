@@ -37,6 +37,8 @@
 #include "ActsExamples/TruthTracking/TruthTrackFinder.hpp"
 #include "ActsExamples/Utilities/Options.hpp"
 #include "ActsExamples/Utilities/Paths.hpp"
+#include "ActsExamples/Utilities/SeedsToPrototracks.hpp"
+#include "ActsExamples/Utilities/TracksToTrajectories.hpp"
 #include <Acts/Definitions/Units.hpp>
 
 #include <filesystem>
@@ -171,7 +173,6 @@ int runRecCKFTracks(
           spCfg.outputSpacePoints,
       };
       seedingCfg.outputSeeds = "seeds";
-      seedingCfg.outputProtoTracks = "prototracks";
 
       seedingCfg.gridConfig.rMax = 200._mm;
       seedingCfg.seedFinderConfig.rMax = seedingCfg.gridConfig.rMax;
@@ -214,7 +215,14 @@ int runRecCKFTracks(
 
       sequencer.addAlgorithm(
           std::make_shared<SeedingAlgorithm>(seedingCfg, logLevel));
-      inputProtoTracks = seedingCfg.outputProtoTracks;
+
+      SeedsToPrototracks::Config seedsToPrototrackCfg;
+      seedsToPrototrackCfg.inputSeeds = seedingCfg.outputSeeds;
+      seedsToPrototrackCfg.outputProtoTracks = "prototracks";
+      sequencer.addAlgorithm(
+          std::make_shared<SeedsToPrototracks>(seedsToPrototrackCfg, logLevel));
+
+      inputProtoTracks = seedsToPrototrackCfg.outputProtoTracks;
       inputSeeds = seedingCfg.outputSeeds;
     }
 
@@ -232,18 +240,10 @@ int runRecCKFTracks(
     // Algorithm estimating track parameter from seed
     TrackParamsEstimationAlgorithm::Config paramsEstimationCfg;
     paramsEstimationCfg.inputSeeds = inputSeeds;
-    paramsEstimationCfg.inputProtoTracks = inputProtoTracks;
-    paramsEstimationCfg.inputSpacePoints = {
-        spCfg.outputSpacePoints,
-    };
-    paramsEstimationCfg.inputSourceLinks = digiCfg.outputSourceLinks;
     paramsEstimationCfg.outputTrackParameters = "estimatedparameters";
-    paramsEstimationCfg.outputProtoTracks = "prototracks_estimated";
     paramsEstimationCfg.trackingGeometry = trackingGeometry;
     paramsEstimationCfg.magneticField = magneticField;
     paramsEstimationCfg.bFieldMin = 0.1_T;
-    paramsEstimationCfg.deltaRMax = 100._mm;
-    paramsEstimationCfg.deltaRMin = 10._mm;
     paramsEstimationCfg.sigmaLoc0 = 25._um;
     paramsEstimationCfg.sigmaLoc1 = 100._um;
     paramsEstimationCfg.sigmaPhi = 0.02_degree;
@@ -266,16 +266,22 @@ int runRecCKFTracks(
   trackFindingCfg.inputMeasurements = digiCfg.outputMeasurements;
   trackFindingCfg.inputSourceLinks = digiCfg.outputSourceLinks;
   trackFindingCfg.inputInitialTrackParameters = outputTrackParameters;
-  trackFindingCfg.outputTrajectories = "trajectories";
+  trackFindingCfg.outputTracks = "tracks";
   trackFindingCfg.computeSharedHits = true;
   trackFindingCfg.findTracks = TrackFindingAlgorithm::makeTrackFinderFunction(
       trackingGeometry, magneticField);
   sequencer.addAlgorithm(
       std::make_shared<TrackFindingAlgorithm>(trackFindingCfg, logLevel));
 
+  TracksToTrajectories::Config tracksToTrajCfg{};
+  tracksToTrajCfg.inputTracks = trackFindingCfg.outputTracks;
+  tracksToTrajCfg.outputTrajectories = "trajectories";
+  sequencer.addAlgorithm(
+      (std::make_shared<TracksToTrajectories>(tracksToTrajCfg, logLevel)));
+
   // write track states from CKF
   RootTrajectoryStatesWriter::Config trackStatesWriter;
-  trackStatesWriter.inputTrajectories = trackFindingCfg.outputTrajectories;
+  trackStatesWriter.inputTrajectories = tracksToTrajCfg.outputTrajectories;
   // @note The full particles collection is used here to avoid lots of warnings
   // since the unselected CKF track might have a majority particle not in the
   // filtered particle collection. This could be avoided when a seperate track
@@ -293,7 +299,7 @@ int runRecCKFTracks(
 
   // write track summary from CKF
   RootTrajectorySummaryWriter::Config trackSummaryWriter;
-  trackSummaryWriter.inputTrajectories = trackFindingCfg.outputTrajectories;
+  trackSummaryWriter.inputTrajectories = tracksToTrajCfg.outputTrajectories;
   // @note The full particles collection is used here to avoid lots of warnings
   // since the unselected CKF track might have a majority particle not in the
   // filtered particle collection. This could be avoided when a seperate track
@@ -309,7 +315,7 @@ int runRecCKFTracks(
   // Write CKF performance data
   CKFPerformanceWriter::Config perfWriterCfg;
   perfWriterCfg.inputParticles = inputParticles;
-  perfWriterCfg.inputTrajectories = trackFindingCfg.outputTrajectories;
+  perfWriterCfg.inputTrajectories = tracksToTrajCfg.outputTrajectories;
   perfWriterCfg.inputMeasurementParticlesMap =
       digiCfg.outputMeasurementParticlesMap;
   // The bottom seed could be the first, second or third hits on the truth track
@@ -338,7 +344,7 @@ int runRecCKFTracks(
   if (vm["output-csv"].template as<bool>()) {
     // Write the CKF track as Csv
     CsvMultiTrajectoryWriter::Config trackWriterCsvConfig;
-    trackWriterCsvConfig.inputTrajectories = trackFindingCfg.outputTrajectories;
+    trackWriterCsvConfig.inputTrajectories = tracksToTrajCfg.outputTrajectories;
     trackWriterCsvConfig.outputDir = outputDir;
     trackWriterCsvConfig.inputMeasurementParticlesMap =
         digiCfg.outputMeasurementParticlesMap;

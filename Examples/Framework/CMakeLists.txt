@@ -2,11 +2,11 @@ include(ActsTargetLinkLibrariesSystem)
 
 add_library(
   ActsExamplesFramework SHARED
-  src/Framework/BareAlgorithm.cpp
+  src/Framework/IAlgorithm.cpp
   src/Framework/WhiteBoard.cpp
-  src/Framework/BareService.cpp
   src/Framework/RandomNumbers.cpp
   src/Framework/Sequencer.cpp
+  src/Utilities/EventDataTransforms.cpp
   src/Utilities/Paths.cpp
   src/Utilities/Options.cpp
   src/Utilities/Helpers.cpp
@@ -62,3 +62,7 @@ endif()
 install(
   TARGETS ActsExamplesFramework
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(
+  DIRECTORY include/ActsExamples 
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

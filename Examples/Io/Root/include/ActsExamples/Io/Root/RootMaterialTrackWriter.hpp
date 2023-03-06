@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "ActsExamples/Framework/IService.hpp"
 #include "ActsExamples/Framework/ProcessCode.hpp"
 #include "ActsExamples/Framework/WriterT.hpp"
 #include <Acts/Propagator/MaterialInteractor.hpp>
@@ -56,6 +55,9 @@ class RootMaterialTrackWriter
     bool storeSurface = false;
     /// Write the volume to which the material step correpond
     bool storeVolume = false;
+    /// Collapse consecutive interactions of a single surface into a single
+    /// interaction
+    bool collapseInteractions = false;
   };
 
   /// Constructor with
@@ -68,7 +70,7 @@ class RootMaterialTrackWriter
   ~RootMaterialTrackWriter() override;
 
   /// Framework intialize method
-  ActsExamples::ProcessCode endRun() override;
+  ActsExamples::ProcessCode finalize() override;
 
   /// Readonly access to the config
   const Config& config() const { return m_cfg; }

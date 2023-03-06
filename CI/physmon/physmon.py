@@ -5,7 +5,6 @@ import tempfile
 import shutil
 import datetime
 import sys
-import subprocess
 
 sys.path += [
     str(Path(__file__).parent.parent.parent / "Examples/Scripts/Python/"),
@@ -24,6 +23,7 @@ from common import getOpenDataDetectorDirectory
 from acts.examples.odd import getOpenDataDetector
 from acts.examples.simulation import (
     addParticleGun,
+    MomentumConfig,
     EtaConfig,
     PhiConfig,
     ParticleConfig,
@@ -37,7 +37,7 @@ from acts.examples.reconstruction import (
     SeedFinderConfigArg,
     SeedFinderOptionsArg,
     SeedingAlgorithm,
-    TrackParamsEstimationConfig,
+    TruthEstimatedSeedingAlgorithmConfigArg,
     addCKFTracks,
     CKFPerformanceConfig,
     addAmbiguityResolution,
@@ -80,6 +80,7 @@ def truth_tracking_kalman():
         s = acts.examples.Sequencer(
             events=10000, numThreads=-1, logLevel=acts.logging.INFO
         )
+
         tp = Path(temp)
         runTruthTrackingKalman(
             trackingGeometry,
@@ -121,9 +122,11 @@ def truth_tracking_gsf():
 
 
 def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
-    s = acts.examples.Sequencer(events=500, numThreads=-1, logLevel=acts.logging.INFO)
-
     with tempfile.TemporaryDirectory() as temp:
+        s = acts.examples.Sequencer(
+            events=500, numThreads=-1, logLevel=acts.logging.INFO
+        )
+
         tp = Path(temp)
 
         for d in decorators:
@@ -131,17 +134,15 @@ def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
 
         rnd = acts.examples.RandomNumbers(seed=42)
 
-        vtxGen = acts.examples.GaussianVertexGenerator(
-            stddev=acts.Vector4(10 * u.um, 10 * u.um, 50 * u.mm, 0),
-            mean=acts.Vector4(0, 0, 0, 0),
-        )
-
         addParticleGun(
             s,
             EtaConfig(-4.0, 4.0),
             ParticleConfig(4, acts.PdgParticle.eMuon, True),
             PhiConfig(0.0, 360.0 * u.degree),
-            vtxGen=vtxGen,
+            vtxGen=acts.examples.GaussianVertexGenerator(
+                stddev=acts.Vector4(10 * u.um, 10 * u.um, 50 * u.mm, 0),
+                mean=acts.Vector4(0, 0, 0, 0),
+            ),
             multiplicity=50,
             rnd=rnd,
         )
@@ -181,7 +182,7 @@ def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
                 impactMax=3 * u.mm,
             ),
             SeedFinderOptionsArg(bFieldInZ=1.99724 * u.T, beamPos=(0.0, 0.0)),
-            TrackParamsEstimationConfig(deltaR=(10.0 * u.mm, None)),
+            TruthEstimatedSeedingAlgorithmConfigArg(deltaR=(10.0 * u.mm, None)),
             seedingAlgorithm=SeedingAlgorithm.TruthSmeared
             if truthSmearedSeeded
             else SeedingAlgorithm.TruthEstimated
@@ -200,12 +201,10 @@ def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
             field,
             CKFPerformanceConfig(ptMin=400.0 * u.MeV, nMeasurementsMin=6),
             TrackSelectorRanges(
-                removeNeutral=True,
                 loc0=(-4.0 * u.mm, 4.0 * u.mm),
                 pt=(500 * u.MeV, None),
             ),
             outputDirRoot=tp,
-            outputDirCsv=None,
         )
 
         if label in ["seeded", "orthogonal"]:
@@ -230,9 +229,9 @@ def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
         del s
 
         for stem in ["performance_ckf", "performance_vertexing"] + (
-            ["performance_seeding_hists", "performance_ambi"]
+            ["performance_seeding", "performance_ambi"]
             if label in ["seeded", "orthogonal"]
-            else ["performance_seeding_hists"]
+            else ["performance_seeding"]
             if label == "truth_estimated"
             else []
         ):
@@ -242,11 +241,11 @@ def run_ckf_tracking(truthSmearedSeeded, truthEstimatedSeeded, label):
 
 
 def run_vertexing(fitter, mu, events):
-    s = acts.examples.Sequencer(
-        events=events, numThreads=-1, logLevel=acts.logging.INFO
-    )
-
     with tempfile.TemporaryDirectory() as temp:
+        s = acts.examples.Sequencer(
+            events=events, numThreads=-1, logLevel=acts.logging.INFO
+        )
+
         tp = Path(temp)
 
         for d in decorators:
@@ -254,17 +253,15 @@ def run_vertexing(fitter, mu, events):
 
         rnd = acts.examples.RandomNumbers(seed=42)
 
-        vtxGen = acts.examples.GaussianVertexGenerator(
-            stddev=acts.Vector4(10 * u.um, 10 * u.um, 50 * u.mm, 0),
-            mean=acts.Vector4(0, 0, 0, 0),
-        )
-
         addParticleGun(
             s,
-            EtaConfig(-4.0, 4.0),
-            ParticleConfig(4, acts.PdgParticle.eMuon, True),
-            PhiConfig(0.0, 360.0 * u.degree),
-            vtxGen=vtxGen,
+            MomentumConfig(1.0 * u.GeV, 10.0 * u.GeV, transverse=True),
+            EtaConfig(-3.0, 3.0),
+            ParticleConfig(4, acts.PdgParticle.eMuon, randomizeCharge=True),
+            vtxGen=acts.examples.GaussianVertexGenerator(
+                stddev=acts.Vector4(10 * u.um, 10 * u.um, 50 * u.mm, 0),
+                mean=acts.Vector4(0, 0, 0, 0),
+            ),
             multiplicity=mu,
             rnd=rnd,
         )
@@ -288,10 +285,6 @@ def run_vertexing(fitter, mu, events):
             s,
             trackingGeometry,
             field,
-            TruthSeedRanges(pt=(500.0 * u.MeV, None), nHits=(9, None)),
-            ParticleSmearingSigmas(
-                pRel=0.01
-            ),  # only used by SeedingAlgorithm.TruthSmeared
             SeedFinderConfigArg(
                 r=(None, 200 * u.mm),  # rMin=default, 33mm
                 deltaR=(1 * u.mm, 60 * u.mm),
@@ -304,11 +297,9 @@ def run_vertexing(fitter, mu, events):
                 impactMax=3 * u.mm,
             ),
             SeedFinderOptionsArg(bFieldInZ=1.99724 * u.T),
-            TrackParamsEstimationConfig(deltaR=(10.0 * u.mm, None)),
             seedingAlgorithm=SeedingAlgorithm.Default,
             geoSelectionConfigFile=geoSel,
             rnd=rnd,  # only used by SeedingAlgorithm.TruthSmeared
-            outputDirRoot=None,
         )
 
         addCKFTracks(
@@ -317,19 +308,16 @@ def run_vertexing(fitter, mu, events):
             field,
             CKFPerformanceConfig(ptMin=400.0 * u.MeV, nMeasurementsMin=6),
             TrackSelectorRanges(
-                removeNeutral=True,
-                loc0=(None, 4.0 * u.mm),
                 pt=(500 * u.MeV, None),
+                loc0=(-4.0 * u.mm, 4.0 * u.mm),
+                absEta=(None, 3.0),
             ),
-            outputDirRoot=None,
-            outputDirCsv=None,
         )
 
         addAmbiguityResolution(
             s,
             AmbiguityResolutionConfig(maximumSharedHits=3),
             CKFPerformanceConfig(ptMin=400.0 * u.MeV, nMeasurementsMin=6),
-            outputDirRoot=None,
         )
 
         addVertexFitting(

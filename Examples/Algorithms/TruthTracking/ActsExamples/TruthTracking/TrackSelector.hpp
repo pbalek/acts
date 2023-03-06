@@ -1,6 +1,6 @@
 // This file is part of the Acts project.
 //
-// Copyright (C) 2019 CERN for the benefit of the Acts project
+// Copyright (C) 2019-2023 CERN for the benefit of the Acts project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "ActsExamples/Framework/BareAlgorithm.hpp"
+#include "ActsExamples/Framework/IAlgorithm.hpp"
 
 #include <limits>
 #include <string>
@@ -16,21 +16,13 @@
 namespace ActsExamples {
 
 /// Select tracks by applying some selection cuts.
-class TrackSelector final : public BareAlgorithm {
+class TrackSelector final : public IAlgorithm {
  public:
   struct Config {
-    /// Optional. Input track parameters collection. Mutually exclusive with
-    /// trajectories input.
-    std::string inputTrackParameters;
-    /// Optional. Input trajectories container. Mutually exclusive with track
-    /// parameters input.
-    std::string inputTrajectories;
-    /// Optional. Output track parameters collection. Will only be set if track
-    /// parameters input was set.
-    std::string outputTrackParameters;
-    /// Optional. Output trajectories container. Will only be set if
-    /// trajectories input was set
-    std::string outputTrajectories;
+    /// Input track collection.
+    std::string inputTracks;
+    /// Output track collection
+    std::string outputTracks;
 
     // Minimum/maximum local positions.
     double loc0Min = -std::numeric_limits<double>::infinity();
@@ -50,10 +42,6 @@ class TrackSelector final : public BareAlgorithm {
     // Momentum cuts.
     double ptMin = 0.0;
     double ptMax = std::numeric_limits<double>::infinity();
-    /// Remove charged particles.
-    bool removeCharged = false;
-    /// Remove neutral particles.
-    bool removeNeutral = false;
   };
 
   TrackSelector(const Config& config, Acts::Logging::Level level);
