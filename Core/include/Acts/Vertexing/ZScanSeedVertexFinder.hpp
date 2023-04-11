@@ -36,6 +36,9 @@ class ZScanSeedVertexFinder {
             float rMinMiddle = 60.f * Acts::UnitConstants::mm;
             float rMaxMiddle = 120.f * Acts::UnitConstants::mm;
 
+            // minimum slope in z-r plane for near-middle spacepoints, effectively removing triplets with large |eta|
+            float minZRslope = 0.2;
+
             // bin size for the histogram
             float zBinSize = 1.f * Acts::UnitConstants::mm;
 
@@ -59,7 +62,7 @@ class ZScanSeedVertexFinder {
         /// @brief Finds the vertex based on the provided spacepoints
         /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
         /// @return Position of the vertex along z-axis
-        std::vector<float> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
+        std::vector<std::vector<float>> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
     private:
         /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector
@@ -86,6 +89,29 @@ class ZScanSeedVertexFinder {
         /// @return True if the deviations are within configured ranges
         bool isTripletValid(const Triplet triplet) const;
 
+        /// @brief Calculates equation of the plane (alpha*x + beta*y + gamma*z + delta = 0), given the three points
+        /// @param triplet A single triplet (with 3 spacepoints)
+        /// @return array of {alpha,beta,gamma,delta}
+        std::array<double,4> makePlaneFromTriplet(const Triplet triplet) const;
+
+        /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all planes defined by the triplets
+        /// @param triplets Vector of all valid triplets
+        /// @return Position {x,y,z} of the vertex
+        std::vector<float> findClosestPointFromPlanes(const std::vector<Triplet>& triplets) const;
+
+        /// @brief Calculates parameters of the line (starting point + direction), given the three points
+        /// @param triplet A single triplet (with 3 spacepoints)
+        /// @return array of {starting_point_X,starting_point_Y,starting_point_Z, direction_X,direction_Y,direction_Z}
+        std::array<double,6> makeLineFromTriplet(const Triplet triplet) const;
+
+        /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all lines fitted through the triplets
+        /// @param triplets Vector of all valid triplets
+        /// @return Position {x,y,z} of the vertex
+        std::vector<float> findClosestPointFromLines(const std::vector<Triplet>& triplets) const;
+
+        std::array<double,2> makeZRLineFromTriplet(const Triplet triplet) const;
+        std::vector<std::vector<float>> findClosestPointFromZRLines(const std::vector<Triplet>& triplets) const;
+
         /// @brief Creates a vector pretending to be a histogram of the estimated origins of the triplets
         /// @param triplets Vector of all valid triplets
         /// @return Histogram of the estimated origins
@@ -94,7 +120,7 @@ class ZScanSeedVertexFinder {
         /// @brief Finds a single peak in the histogram
         /// @param hist Histograms with (preferenbly) a single peak
         /// @return Position along z-axis of the peak, taking into account "zBinSize"
-        float findZPeak(const std::vector<int>& hist) const;
+        float findZPeak(const std::vector<int>& hist, int doSecondPeak) const;
 
         /// Logging instance
         std::unique_ptr<const Logger> m_logger;

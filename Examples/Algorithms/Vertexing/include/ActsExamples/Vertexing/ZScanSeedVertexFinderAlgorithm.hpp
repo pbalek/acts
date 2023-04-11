@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "ActsExamples/Framework/BareAlgorithm.hpp"
+#include "ActsExamples/Framework/IAlgorithm.hpp"
 
 #include <string>
 
 namespace ActsExamples {
 
-class ZScanSeedVertexFinderAlgorithm final : public BareAlgorithm {
+class ZScanSeedVertexFinderAlgorithm final : public IAlgorithm {
  public:
   struct Config {
     /// Optional. Input spacepoints container.

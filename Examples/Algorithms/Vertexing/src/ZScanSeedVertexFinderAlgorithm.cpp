@@ -34,7 +34,7 @@
 
 ActsExamples::ZScanSeedVertexFinderAlgorithm::ZScanSeedVertexFinderAlgorithm(
     const Config& cfg, Acts::Logging::Level lvl)
-    : ActsExamples::BareAlgorithm("ZScanSeedVertexFinder", lvl), m_cfg(cfg) {
+    : ActsExamples::IAlgorithm("ZScanSeedVertexFinder", lvl), m_cfg(cfg) {
   if (m_cfg.inputSpacepoints.empty()) { 
     ACTS_ERROR("You have to either provide seeds");
   }
@@ -61,7 +61,7 @@ ActsExamples::ProcessCode ActsExamples::ZScanSeedVertexFinderAlgorithm::execute(
   ACTS_INFO("Found " << result.size() << " vertices in the event in "<<(t2-t1).count()/1e9<<" seconds.");
   for(auto r : result)
   {
-    ACTS_INFO("Found vertex at z = " << r <<"mm");
+    ACTS_INFO("Found vertex at x = " << r.at(0) <<"mm, y = " << r.at(1) <<"mm, z = " << r.at(2) <<"mm");
   }
 
   ctx.eventStore.add(m_cfg.outputVertices, std::move(result));
