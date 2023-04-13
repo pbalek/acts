@@ -37,13 +37,17 @@ class ZScanSeedVertexFinder {
             float rMaxMiddle = 120.f * Acts::UnitConstants::mm;
 
             // minimum slope in z-r plane for near-middle spacepoints, effectively removing triplets with large |eta|
-            float minZRslope = 0.2;
+            float minZRslope = 0.1;
 
             // bin size for the histogram
             float zBinSize = 1.f * Acts::UnitConstants::mm;
+            // number of phi slices
+            int numPhiSlices = 63;
 
-            // maximum z position of the vertex
+            // maximum Z position of the vertex at the point closest to the Z axis
             float maxZPosition = 300.f * Acts::UnitConstants::mm;
+            // maximum R position of the vertex at the point closest to the Z axis
+            float maxRPosition = 300.f * Acts::UnitConstants::mm;
         };
         
         /// Const access to the config
@@ -74,20 +78,25 @@ class ZScanSeedVertexFinder {
         /// Configuration instance 
         Config m_cfg;
 
-        /// @brief Sorts spacepoints into a separate vectors for near, middle, and far spacepoints
+        /// @brief Sorts spacepoints into a separate vectors for near, middle, and far spacepoints; and for each slice of phi
         /// @param spacepoints Vector of the input spacepoints;
         /// @return Vector of vectors for each set of spacepoints
-        std::vector<std::vector<const spacepoint_t*>> sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
+        std::vector<std::vector<std::vector<const spacepoint_t*>>> sortSpacepoints2(const std::vector<spacepoint_t>& spacepoints) const;
 
         /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints
         /// @param sorted_spacepoints Vector of input vector of vectors for each set of spacepoints
         /// @return Vector of valid triplets
-        std::vector<Triplet> findTriplets(const std::vector<std::vector<const spacepoint_t*>>& sorted_spacepoints) const;
+        std::vector<Triplet> findTriplets(const std::vector<std::vector<const spacepoint_t*>>& sorted_spacepoints, int mode) const;
+
+        /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints
+        /// @param sorted_spacepoints Vector of input vector of vectors for each set of spacepoints
+        /// @return Vector of valid triplets
+        std::vector<Triplet> findTriplets2(const std::vector<std::vector<std::vector<const spacepoint_t*>>>& sorted_spacepoints, int mode) const;
 
         /// @brief Validate the triplet based on "maxZRdeviation" and "maxXYdeviation"
         /// @param triplet A single triplet to be validated
         /// @return True if the deviations are within configured ranges
-        bool isTripletValid(const Triplet triplet) const;
+        bool isTripletValid(const Triplet triplet,int mode) const;
 
         /// @brief Calculates equation of the plane (alpha*x + beta*y + gamma*z + delta = 0), given the three points
         /// @param triplet A single triplet (with 3 spacepoints)
