@@ -1549,7 +1549,7 @@ def addSeedVertexFinding(
 
     from acts.examples import (
         SeedVertexFinderAlgorithm,
-        RootSeedVertexPerformanceWriter
+        RootSeedVertexPerformanceWriter,
     )
 
     customLogLevel = acts.examples.defaultLogging(s, logLevel)

@@ -68,7 +68,7 @@ class SeedVertexFinder {
   /// @brief Constructor
   ///
   /// @param cfg Configuration object
-  /// @param logger Logging instance
+  /// @param lgr Logging instance
   SeedVertexFinder(const Config& cfg,
                    std::unique_ptr<const Logger> lgr =
                        getDefaultLogger("SeedVertexFinder", Logging::DEBUG));

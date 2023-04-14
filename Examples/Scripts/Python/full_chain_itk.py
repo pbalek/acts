@@ -21,7 +21,6 @@ from acts.examples.reconstruction import (
     AmbiguityResolutionConfig,
     addVertexFitting,
     VertexFinder,
-    addSeedVertexFinding,
 )
 
 ttbar_pu200 = False
@@ -34,40 +33,14 @@ detector, trackingGeometry, decorators = acts.examples.itk.buildITkGeometry(geo_
 field = acts.examples.MagneticFieldMapXyz(str(geo_dir / "bfield/ATLAS-BField-xyz.root"))
 rnd = acts.examples.RandomNumbers(seed=42)
 
-s = acts.examples.Sequencer(events=10, numThreads=100, outputDir=str(outputDir))
-
-import sys
-print('argument list: %s' % str(sys.argv))
-
-numParticles=int(sys.argv[1])
-# particle=int(sys.argv[2])
-minpT=float(sys.argv[3])
-vtxX,vtxY,vtxZ=float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6])
-
-if sys.argv[2]=="13":
-    particle=acts.PdgParticle.eMuon
-if sys.argv[2]=="211":
-    particle=acts.PdgParticle.ePionPlus
-if sys.argv[2]=="2112":
-    particle=acts.PdgParticle.eProton
-if sys.argv[2]=="-13":
-    particle=acts.PdgParticle.eAntiMuon
-if sys.argv[2]=="-211":
-    particle=acts.PdgParticle.ePionMinus
-if sys.argv[2]=="-2112":
-    particle=acts.PdgParticle.eAntiProton
+s = acts.examples.Sequencer(events=100, numThreads=-1, outputDir=str(outputDir))
 
 if not ttbar_pu200:
     addParticleGun(
         s,
-        MomentumConfig(minpT*u.GeV, 10*minpT*u.GeV, transverse=True),
+        MomentumConfig(1.0 * u.GeV, 10.0 * u.GeV, transverse=True),
         EtaConfig(-4.0, 4.0, uniform=True),
-        # ParticleConfig(10, acts.PdgParticle.ePionPlus, randomizeCharge=True),
-        ParticleConfig(numParticles, particle, randomizeCharge=False),
-        vtxGen=acts.examples.GaussianVertexGenerator(
-            stddev=acts.Vector4(0.01 * u.mm, 0.01 * u.mm, 0.01 * u.mm, 0.0 * u.ns),
-            mean=acts.Vector4(vtxX*u.mm, vtxY*u.mm, vtxZ*u.mm, 0),
-        ),
+        ParticleConfig(2, acts.PdgParticle.eMuon, randomizeCharge=True),
         rnd=rnd,
     )
 else:
@@ -87,13 +60,11 @@ addFatras(
     s,
     trackingGeometry,
     field,
-    rnd=rnd,
-    preSelectParticles=ParticleSelectorConfig(
-        eta=(-4.0, 4.0), pt=(150 * u.MeV, None), removeNeutral=True
-    )
+    ParticleSelectorConfig(eta=(-4.0, 4.0), pt=(150 * u.MeV, None), removeNeutral=True)
     if ttbar_pu200
     else ParticleSelectorConfig(),
     outputDirRoot=outputDir,
+    rnd=rnd,
 )
 
 addDigitization(
@@ -113,9 +84,7 @@ addSeeding(
     if ttbar_pu200
     else TruthSeedRanges(),
     seedingAlgorithm=SeedingAlgorithm.Default,
-    *acts.examples.itk.itkSeedingAlgConfig(
-        acts.examples.itk.InputSpacePointsType.PixelSpacePoints
-    ),
+    *acts.examples.itk.itkSeedingAlgConfig("PixelSpacePoints"),
     geoSelectionConfigFile=geo_dir / "itk-hgtd/geoSelection-ITk.json",
     outputDirRoot=outputDir,
 )
@@ -125,7 +94,7 @@ addCKFTracks(
     trackingGeometry,
     field,
     CKFPerformanceConfig(ptMin=1.0 * u.GeV if ttbar_pu200 else 0.0, nMeasurementsMin=6),
-    TrackSelectorRanges(pt=(1.0 * u.GeV, None), absEta=(None, 4.0)),
+    TrackSelectorRanges(pt=(1.0 * u.GeV, None), absEta=(None, 4.0), removeNeutral=True),
     outputDirRoot=outputDir,
 )
 
@@ -141,12 +110,6 @@ addVertexFitting(
     field,
     vertexFinder=VertexFinder.Iterative,
     outputDirRoot=outputDir,
-)
-
-addSeedVertexFinding(
-    s,
-    outputDirRoot=outputDir,
-    outputVertices="fittedSeedVertices"
 )
 
 s.run()
