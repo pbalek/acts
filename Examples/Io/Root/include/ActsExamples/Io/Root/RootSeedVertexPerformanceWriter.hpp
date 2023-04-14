@@ -8,10 +8,8 @@
 
 #pragma once
 
-#include "Acts/Definitions/TrackParametrization.hpp"
 #include "Acts/Vertexing/Vertex.hpp"
 #include "ActsExamples/EventData/SimParticle.hpp"
-#include "ActsExamples/EventData/Trajectories.hpp"
 #include "ActsExamples/Framework/WriterT.hpp"
 
 #include <mutex>
@@ -24,28 +22,18 @@ namespace ActsExamples {
 
 /// @class RootSeedVertexPerformanceWriter
 ///
-/// Writes out the number of reconstructed primary vertices along with
-/// the number of primary vertices in detector acceptance as well as
-/// reconstructable primary vertices after track fitting.
+/// Writes out the number of reconstructed seed vertices along with
+/// the number of truth vertices in detector acceptance.
 /// Additionally it matches the reco vertices to their truth vertices
-/// and write out the difference in x,y and z position.
+/// and write out the difference in x, y, and z position.
 class RootSeedVertexPerformanceWriter final
-    : public WriterT<std::vector<std::vector<float>>> {
+    : public WriterT<std::vector<Acts::Vector3>> {
  public:
   struct Config {
     /// All input truth particle collection.
-    // std::string inputAllTruthParticles;
+    std::string inputAllTruthParticles;
     /// Selected input truth particle collection.
-    // std::string inputSelectedTruthParticles;
-    /// Optional. Input track parameters.
-    // std::string inputTrackParameters;
-    /// Optional. Truth particles associated to tracks. Using 1:1 matching if
-    /// given.
-    // std::string inputAssociatedTruthParticles;
-    /// Optional. Trajectories object from track finidng.
-    // std::string inputTrajectories;
-    /// Input hit-particles map collection.
-    // std::string inputMeasurementParticlesMap;
+    std::string inputSelectedTruthParticles;
     /// Input vertex collection.
     std::string inputVertices;
     /// Input reconstruction time.
@@ -56,12 +44,6 @@ class RootSeedVertexPerformanceWriter final
     std::string treeName = "seedvertextree";
     /// File access mode.
     std::string fileMode = "RECREATE";
-    /// Minimum fraction of tracks matched between truth
-    /// and reco vertices to be matched for resolution plots.
-    // double minTrackVtxMatchFraction = 0.5;
-    /// Minimum fraction of hits associated to particle to consider
-    /// as truth matched.
-    // double truthMatchProbMin = 0.5;
   };
 
   /// Constructor
@@ -83,7 +65,7 @@ class RootSeedVertexPerformanceWriter final
   /// @param [in] ctx is the algorithm context for event information
   ProcessCode writeT(
       const AlgorithmContext& ctx,
-      const std::vector<std::vector<float>>& vertices)
+      const std::vector<Acts::Vector3>& vertices)
       override;
 
  private:
@@ -92,41 +74,25 @@ class RootSeedVertexPerformanceWriter final
   TFile* m_outputFile{nullptr};  ///< The output file
   TTree* m_outputTree{nullptr};  ///< The output tree
 
-  // std::vector<float>
-  //     m_diffx;  ///< Difference in x positon between reco and true vtx
-  // std::vector<float>
-  //     m_diffy;  ///< Difference in y positon between reco and true vtx
-  // std::vector<float>
-  //     m_diffz;  ///< Difference in z positon between reco and true vtx
+  std::vector<float> m_diffx;  ///< Difference in x positon between reco and true vtx
+  std::vector<float> m_diffy;  ///< Difference in y positon between reco and true vtx
+  std::vector<float> m_diffz;  ///< Difference in z positon between reco and true vtx
 
-  // std::vector<float> m_truthX;
-  // std::vector<float> m_truthY;
-  // std::vector<float> m_truthZ;
+  std::vector<float> m_truthX;
+  std::vector<float> m_truthY;
+  std::vector<float> m_truthZ;
 
   std::vector<float> m_recoX;
   std::vector<float> m_recoY;
   std::vector<float> m_recoZ;
 
-  std::vector<float> m_allRecoZ;
+  int m_nrecoVtx = -1;           ///< Number of reconstructed vertices
+  int m_ntrueVtx = -1;           ///< Number of true vertices
+  int m_nVtxDetAcceptance = -1;  ///< Number of vertices in detector acceptance
+  int m_timeMS = -1;  ///< Reconstruction time in ms
 
-  // std::vector<float> m_covXX;
-  // std::vector<float> m_covYY;
-  // std::vector<float> m_covXY;
-  // std::vector<float> m_covYX;
-//   std::vector<float> m_trackVtxMatchFraction;
 
-  // int m_nrecoVtx = -1;           ///< Number of reconstructed vertices
-//   int m_ntrueVtx = -1;           ///< Number of true vertices
-//   int m_nVtxDetAcceptance = -1;  ///< Number of vertices in detector acceptance
-//   int m_nVtxReconstructable =
-    //   -1;  ///< Max. number of reconstructable vertices (detector acceptance +
-           ///< tracking efficiency)
-  // int m_timeMS = -1;  ///< Reconstruction time in ms
-
-//   int getNumberOfReconstructableVertices(
-//       const SimParticleContainer& collection) const;
-
-//   int getNumberOfTruePriVertices(const SimParticleContainer& collection) const;
+  int getNumberOfTruePriVertices(const SimParticleContainer& collection) const;
 };
 
 }  // namespace ActsExamples

@@ -1467,9 +1467,6 @@ def addSeedVertexFinding(
 
     customLogLevel = acts.examples.defaultLogging(s, logLevel)
 
-    # inputSpacePoints = "spacepoints"
-    # outputVertices = "fittedSeedVertices"
-
     findSeedVertex = ZScanSeedVertexFinderAlgorithm(
             level=customLogLevel(),
             inputSpacepoints=inputSpacePoints,
@@ -1477,6 +1474,10 @@ def addSeedVertexFinding(
         )
     s.addAlgorithm(findSeedVertex)
 
+    inputParticles = "particles_input"
+    selectedParticles = "particles_selected"
+    outputTime = ""
+    
     if outputDirRoot is not None:
         outputDirRoot = Path(outputDirRoot)
         if not outputDirRoot.exists():
@@ -1485,17 +1486,12 @@ def addSeedVertexFinding(
         s.addWriter(
             RootSeedVertexPerformanceWriter(
                 level=customLogLevel(),
-                # inputAllTruthParticles=inputParticles,
-                # inputSelectedTruthParticles=selectedParticles,
-                # inputMeasurementParticlesMap="measurement_particles_map",
-                # inputTrajectories=trajectories,
-                # inputTrackParameters=trackParameters,
-                # inputAssociatedTruthParticles=associatedParticles,
+                inputAllTruthParticles=inputParticles,
+                inputSelectedTruthParticles=selectedParticles,
                 inputVertices=outputVertices,
-                # minTrackVtxMatchFraction=0.5 if associatedParticles else 0.0,
-                # inputTime=outputTime,
-                treeName="seedvertexing",
+                inputTime=outputTime,
                 filePath=str(outputDirRoot / "performance_seedvertexing.root"),
+                treeName="seedvertexing",
             )
         )
 
