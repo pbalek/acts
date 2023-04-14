@@ -113,7 +113,9 @@ addSeeding(
     if ttbar_pu200
     else TruthSeedRanges(),
     seedingAlgorithm=SeedingAlgorithm.Default,
-    *acts.examples.itk.itkSeedingAlgConfig("PixelSpacePoints"),
+    *acts.examples.itk.itkSeedingAlgConfig(
+        acts.examples.itk.InputSpacePointsType.PixelSpacePoints
+    ),
     geoSelectionConfigFile=geo_dir / "itk-hgtd/geoSelection-ITk.json",
     outputDirRoot=outputDir,
 )

@@ -16,7 +16,6 @@ add_library(
   src/RootTrajectoryStatesWriter.cpp
   src/RootTrajectorySummaryReader.cpp
   src/RootTrajectorySummaryWriter.cpp
-  src/RootVertexPerformanceWriter.cpp
   src/RootBFieldWriter.cpp
   src/RootAthenaNTupleReader.cpp
 )

@@ -12,6 +12,7 @@
 #include "Acts/Vertexing/Vertex.hpp"
 #include "ActsExamples/EventData/SimParticle.hpp"
 #include "ActsExamples/EventData/Trajectories.hpp"
+#include "ActsExamples/Framework/DataHandle.hpp"
 #include "ActsExamples/Framework/WriterT.hpp"
 
 #include <mutex>
@@ -22,16 +23,18 @@ class TTree;
 
 namespace ActsExamples {
 
-/// @class RootVertexPerformanceWriter
+/// @class VertexPerformanceWriter
 ///
 /// Writes out the number of reconstructed primary vertices along with
 /// the number of primary vertices in detector acceptance as well as
 /// reconstructable primary vertices after track fitting.
 /// Additionally it matches the reco vertices to their truth vertices
 /// and write out the difference in x,y and z position.
-class RootVertexPerformanceWriter final
+class VertexPerformanceWriter final
     : public WriterT<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>> {
  public:
+  using HitParticlesMap = IndexMultimap<ActsFatras::Barcode>;
+
   struct Config {
     /// All input truth particle collection.
     std::string inputAllTruthParticles;
@@ -68,9 +71,9 @@ class RootVertexPerformanceWriter final
   ///
   /// @param config Configuration struct
   /// @param level Message level declaration
-  RootVertexPerformanceWriter(const Config& config, Acts::Logging::Level level);
+  VertexPerformanceWriter(const Config& config, Acts::Logging::Level level);
 
-  ~RootVertexPerformanceWriter() override;
+  ~VertexPerformanceWriter() override;
 
   /// End-of-run hook
   ProcessCode finalize() override;
@@ -125,6 +128,26 @@ class RootVertexPerformanceWriter final
       const SimParticleContainer& collection) const;
 
   int getNumberOfTruePriVertices(const SimParticleContainer& collection) const;
+
+  ReadDataHandle<SimParticleContainer> m_inputAllTruthParticles{
+      this, "InputAllTruthParticles"};
+
+  ReadDataHandle<SimParticleContainer> m_inputSelectedTruthParticles{
+      this, "InputSelectedTruthParticles"};
+
+  ReadDataHandle<std::vector<Acts::BoundTrackParameters>>
+      m_inputTrackParameters{this, "InputTrackParameters"};
+
+  ReadDataHandle<TrajectoriesContainer> m_inputTrajectories{
+      this, "InputTrajectories"};
+
+  ReadDataHandle<SimParticleContainer> m_inputAssociatedTruthParticles{
+      this, "InputAssociatedTruthParticles"};
+
+  ReadDataHandle<HitParticlesMap> m_inputMeasurementParticlesMap{
+      this, "InputMeasurementParticlesMap"};
+
+  ReadDataHandle<int> m_inputTime{this, "InputTime"};
 };
 
 }  // namespace ActsExamples
