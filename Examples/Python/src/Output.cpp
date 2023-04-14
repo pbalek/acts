@@ -271,9 +271,11 @@ void addOutput(Context& ctx) {
                              inputSimHits, filePath, fileMode, treeName,
                              trackingGeometry);
 
-  ACTS_PYTHON_DECLARE_WRITER(
-      ActsExamples::RootSeedVertexPerformanceWriter, mex,
-      "RootSeedVertexPerformanceWriter", inputAllTruthParticles, inputSelectedTruthParticles, inputVertices, inputTime, filePath, treeName, fileMode);
+  ACTS_PYTHON_DECLARE_WRITER(ActsExamples::RootSeedVertexPerformanceWriter, mex,
+                             "RootSeedVertexPerformanceWriter",
+                             inputAllTruthParticles,
+                             inputSelectedTruthParticles, inputVertices,
+                             inputTime, filePath, treeName, fileMode);
 
   ACTS_PYTHON_DECLARE_WRITER(ActsExamples::RootSimHitWriter, mex,
                              "RootSimHitWriter", inputSimHits, filePath,

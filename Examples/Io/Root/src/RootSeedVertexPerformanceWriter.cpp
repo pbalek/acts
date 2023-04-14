@@ -15,9 +15,9 @@
 #include "ActsExamples/EventData/SimParticle.hpp"
 
 #include <ios>
-#include <stdexcept>
-#include <set>
 #include <map>
+#include <set>
+#include <stdexcept>
 
 #include <TFile.h>
 #include <TTree.h>
@@ -37,7 +37,8 @@ ActsExamples::RootSeedVertexPerformanceWriter::RootSeedVertexPerformanceWriter(
     throw std::invalid_argument("Collection with all truth particles missing");
   }
   if (m_cfg.inputSelectedTruthParticles.empty()) {
-    throw std::invalid_argument("Collection with selected truth particles missing");
+    throw std::invalid_argument(
+        "Collection with selected truth particles missing");
   }
   if (m_cfg.inputVertices.empty()) {
     throw std::invalid_argument("Collection with vertices missing");
@@ -74,7 +75,8 @@ ActsExamples::RootSeedVertexPerformanceWriter::RootSeedVertexPerformanceWriter(
   }
 }
 
-ActsExamples::RootSeedVertexPerformanceWriter::~RootSeedVertexPerformanceWriter() {
+ActsExamples::RootSeedVertexPerformanceWriter::
+    ~RootSeedVertexPerformanceWriter() {
   if (m_outputFile != nullptr) {
     m_outputFile->Close();
   }
@@ -88,7 +90,6 @@ ActsExamples::RootSeedVertexPerformanceWriter::finalize() {
 
   return ProcessCode::SUCCESS;
 }
-
 
 int ActsExamples::RootSeedVertexPerformanceWriter::getNumberOfTruePriVertices(
     const SimParticleContainer& collection) const {
@@ -109,8 +110,7 @@ int ActsExamples::RootSeedVertexPerformanceWriter::getNumberOfTruePriVertices(
 }
 
 ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
-    const AlgorithmContext& ctx,
-    const std::vector<Acts::Vector3>& vertices) {
+    const AlgorithmContext& ctx, const std::vector<Acts::Vector3>& vertices) {
   // Exclusive access to the tree while writing
   std::lock_guard<std::mutex> lock(m_writeMutex);
 
@@ -118,22 +118,24 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
   ACTS_DEBUG("Number of reco vertices in event: " << m_nrecoVtx);
 
   // // Read truth particle input collection
-  const auto& allTruthParticles = ctx.eventStore.get<SimParticleContainer>(m_cfg.inputAllTruthParticles);
+  const auto& allTruthParticles =
+      ctx.eventStore.get<SimParticleContainer>(m_cfg.inputAllTruthParticles);
   // Get number of generated true primary vertices
   m_ntrueVtx = getNumberOfTruePriVertices(allTruthParticles);
-  ACTS_VERBOSE("Total number of generated truth particles in event : " << allTruthParticles.size());
+  ACTS_VERBOSE("Total number of generated truth particles in event : "
+               << allTruthParticles.size());
 
   // Read selected truth particle input collection
   const auto& selectedTruthParticles = ctx.eventStore.get<SimParticleContainer>(
       m_cfg.inputSelectedTruthParticles);
   // // Get number of detector-accepted true primary vertices
   m_nVtxDetAcceptance = getNumberOfTruePriVertices(selectedTruthParticles);
-  ACTS_VERBOSE("Total number of detector-accepted truth primary vertices : " << m_nVtxDetAcceptance);
+  ACTS_VERBOSE("Total number of detector-accepted truth primary vertices : "
+               << m_nVtxDetAcceptance);
 
   // Loop over truth particles and find the truth
   std::vector<int> truthVertices;
-  for (const auto& particle : allTruthParticles)
-  {
+  for (const auto& particle : allTruthParticles) {
     int priVtxId = particle.particleId().vertexPrimary();
     truthVertices.push_back(priVtxId);
   }
@@ -153,14 +155,13 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
 
   // Loop over all reco vertices and find associated truth particles
   std::vector<SimParticleContainer> truthParticlesAtVtxContainer;
-  for (const auto& vtx : vertices) 
-  {
+  for (const auto& vtx : vertices) {
     // find a particle with such truth vertex
-    for (const auto& particle : allTruthParticles)
-    {
+    for (const auto& particle : allTruthParticles) {
       int priVtxId = particle.particleId().vertexPrimary();
 
-      if (priVtxId != maxOccurrenceId) continue;
+      if (priVtxId != maxOccurrenceId)
+        continue;
       // this is the truth vertex
       const auto& truePos = particle.position();
 
@@ -176,18 +177,15 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
       m_recoY.push_back(vtx[1]);
       m_recoZ.push_back(vtx[2]);
 
-      break; // particle loop
+      break;  // particle loop
     }
   }
 
   // Retrieve and set reconstruction time
-  if (!m_cfg.inputTime.empty())
-  {
+  if (!m_cfg.inputTime.empty()) {
     const auto& reconstructionTimeMS = ctx.eventStore.get<int>(m_cfg.inputTime);
     m_timeMS = reconstructionTimeMS;
-  }
-  else
-  {
+  } else {
     m_timeMS = -1;
   }
 

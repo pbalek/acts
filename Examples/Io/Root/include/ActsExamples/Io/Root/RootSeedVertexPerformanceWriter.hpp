@@ -50,7 +50,8 @@ class RootSeedVertexPerformanceWriter final
   ///
   /// @param config Configuration struct
   /// @param level Message level declaration
-  RootSeedVertexPerformanceWriter(const Config& config, Acts::Logging::Level level);
+  RootSeedVertexPerformanceWriter(const Config& config,
+                                  Acts::Logging::Level level);
 
   ~RootSeedVertexPerformanceWriter() override;
 
@@ -63,10 +64,8 @@ class RootSeedVertexPerformanceWriter final
  protected:
   /// @brief Write method called by the base class
   /// @param [in] ctx is the algorithm context for event information
-  ProcessCode writeT(
-      const AlgorithmContext& ctx,
-      const std::vector<Acts::Vector3>& vertices)
-      override;
+  ProcessCode writeT(const AlgorithmContext& ctx,
+                     const std::vector<Acts::Vector3>& vertices) override;
 
  private:
   Config m_cfg;             ///< The config class
@@ -74,9 +73,12 @@ class RootSeedVertexPerformanceWriter final
   TFile* m_outputFile{nullptr};  ///< The output file
   TTree* m_outputTree{nullptr};  ///< The output tree
 
-  std::vector<float> m_diffx;  ///< Difference in x positon between reco and true vtx
-  std::vector<float> m_diffy;  ///< Difference in y positon between reco and true vtx
-  std::vector<float> m_diffz;  ///< Difference in z positon between reco and true vtx
+  std::vector<float>
+      m_diffx;  ///< Difference in x positon between reco and true vtx
+  std::vector<float>
+      m_diffy;  ///< Difference in y positon between reco and true vtx
+  std::vector<float>
+      m_diffz;  ///< Difference in z positon between reco and true vtx
 
   std::vector<float> m_truthX;
   std::vector<float> m_truthY;
@@ -89,8 +91,7 @@ class RootSeedVertexPerformanceWriter final
   int m_nrecoVtx = -1;           ///< Number of reconstructed vertices
   int m_ntrueVtx = -1;           ///< Number of true vertices
   int m_nVtxDetAcceptance = -1;  ///< Number of vertices in detector acceptance
-  int m_timeMS = -1;  ///< Reconstruction time in ms
-
+  int m_timeMS = -1;             ///< Reconstruction time in ms
 
   int getNumberOfTruePriVertices(const SimParticleContainer& collection) const;
 };
