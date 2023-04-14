@@ -11,7 +11,7 @@
 #include "ActsExamples/Vertexing/IterativeVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/TutorialVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/VertexFitterAlgorithm.hpp"
-#include "ActsExamples/Vertexing/ZScanSeedVertexFinderAlgorithm.hpp"
+#include "ActsExamples/Vertexing/SeedVertexFinderAlgorithm.hpp"
 
 #include <memory>
 
@@ -50,7 +50,7 @@ void addVertexing(Context& ctx) {
       outputVertices, bField, doConstrainedFit, constraintPos, constraintCov);
 
   ACTS_PYTHON_DECLARE_ALGORITHM(
-      ActsExamples::ZScanSeedVertexFinderAlgorithm, mex, "ZScanSeedVertexFinderAlgorithm",
+      ActsExamples::SeedVertexFinderAlgorithm, mex, "SeedVertexFinderAlgorithm",
       inputSpacepoints, outputVertices);
 }
 

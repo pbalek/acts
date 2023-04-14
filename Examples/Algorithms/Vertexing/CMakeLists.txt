@@ -4,7 +4,7 @@ add_library(
   src/IterativeVertexFinderAlgorithm.cpp
   src/TutorialVertexFinderAlgorithm.cpp
   src/VertexFitterAlgorithm.cpp
-  src/ZScanSeedVertexFinderAlgorithm.cpp
+  src/SeedVertexFinderAlgorithm.cpp
 )
 target_include_directories(
   ActsExamplesVertexing

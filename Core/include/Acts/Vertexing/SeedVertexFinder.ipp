@@ -11,7 +11,7 @@
 #include <Eigen/Eigenvalues> 
 
 template <typename spacepoint_t>
-Acts::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(const Acts::ZScanSeedVertexFinder<spacepoint_t>::Config& cfg, std::unique_ptr<const Logger> lgr)
+Acts::SeedVertexFinder<spacepoint_t>::SeedVertexFinder(const Acts::SeedVertexFinder<spacepoint_t>::Config& cfg, std::unique_ptr<const Logger> lgr)
     : m_cfg(cfg), m_logger(std::move(lgr))
 {
     if(std::isnan(cfg.maxXYdeviation))  ACTS_ERROR("value of maxXYdeviation was not initialized");
@@ -32,11 +32,11 @@ Acts::ZScanSeedVertexFinder<spacepoint_t>::ZScanSeedVertexFinder(const Acts::ZSc
 
 
 template <typename spacepoint_t>
-Acts::Vector3 Acts::ZScanSeedVertexFinder<spacepoint_t>::findVertex(const std::vector<spacepoint_t>& spacepoints) const
+Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(const std::vector<spacepoint_t>& spacepoints) const
 {
     std::vector<std::vector<std::vector<const spacepoint_t*>>> sorted_spacepoints=sortSpacepoints(spacepoints);
 
-    std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets=findTriplets(sorted_spacepoints);
+    std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet> triplets=findTriplets(sorted_spacepoints);
 
     // if no valid triplets found
     if(triplets.empty()) return {};
@@ -58,7 +58,7 @@ Acts::Vector3 Acts::ZScanSeedVertexFinder<spacepoint_t>::findVertex(const std::v
 
 
 template <typename spacepoint_t>
-std::vector<std::vector<std::vector<const spacepoint_t*>>> Acts::ZScanSeedVertexFinder<spacepoint_t>::sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const
+std::vector<std::vector<std::vector<const spacepoint_t*>>> Acts::SeedVertexFinder<spacepoint_t>::sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const
 {
     std::vector<const spacepoint_t*> helper={};
     std::vector<std::vector<const spacepoint_t*>> near_spacepoints(m_cfg.numPhiSlices,helper), middle_spacepoints(m_cfg.numPhiSlices,helper), far_spacepoints(m_cfg.numPhiSlices,helper);
@@ -81,9 +81,9 @@ std::vector<std::vector<std::vector<const spacepoint_t*>>> Acts::ZScanSeedVertex
 
 
 template <typename spacepoint_t>
-std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::ZScanSeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<std::vector<const spacepoint_t*>>>& sorted_spacepoints) const
+std::vector<typename Acts::SeedVertexFinder<spacepoint_t>::Triplet> Acts::SeedVertexFinder<spacepoint_t>::findTriplets(const std::vector<std::vector<std::vector<const spacepoint_t*>>>& sorted_spacepoints) const
 {
-    std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> triplets;
+    std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
     for(int nearphi=0;nearphi<m_cfg.numPhiSlices;++nearphi)
     {
@@ -108,7 +108,7 @@ std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::Z
                             Acts::ActsScalar delta_phiBC=detail::difference_periodic(phiB,phiC,2*M_PI);
                             if(std::abs(delta_phiBC) > m_cfg.maxPhideviation) continue;
                             
-                            Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet tr(near_sp, middle_sp, far_sp);
+                            Acts::SeedVertexFinder<spacepoint_t>::Triplet tr(near_sp, middle_sp, far_sp);
                             if(isTripletValid(tr)) triplets.push_back(tr);
                         }
                     }
@@ -122,7 +122,7 @@ std::vector<typename Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet> Acts::Z
 
 
 template <typename spacepoint_t>
-bool Acts::ZScanSeedVertexFinder<spacepoint_t>::isTripletValid(Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet& triplet) const
+bool Acts::SeedVertexFinder<spacepoint_t>::isTripletValid(Acts::SeedVertexFinder<spacepoint_t>::Triplet& triplet) const
 {    
     // slope for near+middle spacepoints
     Acts::ActsScalar alpha1 = std::atan2(triplet.a->y()-triplet.b->y(),triplet.a->x()-triplet.b->x()); 
@@ -168,7 +168,7 @@ bool Acts::ZScanSeedVertexFinder<spacepoint_t>::isTripletValid(Acts::ZScanSeedVe
 
 
 template <typename spacepoint_t>
-std::pair<Acts::Vector3,Acts::ActsScalar> Acts::ZScanSeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(const Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet triplet) const
+std::pair<Acts::Vector3,Acts::ActsScalar> Acts::SeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(const Acts::SeedVertexFinder<spacepoint_t>::Triplet triplet) const
 {
     Acts::Vector3 a{triplet.a->x(), triplet.a->y(), triplet.a->z()};
     Acts::Vector3 b{triplet.b->x(), triplet.b->y(), triplet.b->z()};
@@ -184,7 +184,7 @@ std::pair<Acts::Vector3,Acts::ActsScalar> Acts::ZScanSeedVertexFinder<spacepoint
 
 
 template <typename spacepoint_t>
-Acts::Vector3 Acts::ZScanSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(const std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const
+Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(const std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet>& triplets) const
 {
     // define function f = sum over all triplets [distance from an unknown point (x_0,y_0,z_0) to the plane defined by the triplet]
     // find minimum of "f" by partial derivations over x_0, y_0, and z_0
@@ -211,7 +211,7 @@ Acts::Vector3 Acts::ZScanSeedVertexFinder<spacepoint_t>::findClosestPointFromPla
 
 
 template <typename spacepoint_t>
-Acts::Ray3D Acts::ZScanSeedVertexFinder<spacepoint_t>::makeRayFromTriplet(const Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet triplet) const
+Acts::Ray3D Acts::SeedVertexFinder<spacepoint_t>::makeRayFromTriplet(const Acts::SeedVertexFinder<spacepoint_t>::Triplet triplet) const
 {
     Acts::SymMatrix3 mat;
     mat.row(0) = Acts::Vector3(triplet.a->x(), triplet.a->y(), triplet.a->z());
@@ -231,7 +231,7 @@ Acts::Ray3D Acts::ZScanSeedVertexFinder<spacepoint_t>::makeRayFromTriplet(const 
 
 
 template <typename spacepoint_t>
-Acts::Vector3 Acts::ZScanSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(const std::vector<Acts::ZScanSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const
+Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromRays(const std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet>& triplets) const
 {
     // define function f = sum over all triplets [distance from an unknown point (x_0,y_0,z_0) to the ray defined by the triplet]
     // find minimum of "f" by partial derivations over x_0, y_0, and z_0

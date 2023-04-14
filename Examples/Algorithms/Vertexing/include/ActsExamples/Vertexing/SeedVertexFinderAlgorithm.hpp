@@ -14,7 +14,7 @@
 
 namespace ActsExamples {
 
-class ZScanSeedVertexFinderAlgorithm final : public IAlgorithm {
+class SeedVertexFinderAlgorithm final : public IAlgorithm {
  public:
   struct Config {
     /// Optional. Input spacepoints container.
@@ -23,7 +23,7 @@ class ZScanSeedVertexFinderAlgorithm final : public IAlgorithm {
     std::string outputVertices;
   };
 
-  ZScanSeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
+  SeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
 
   /// @brief Find a vertex using spacepoints
   ///

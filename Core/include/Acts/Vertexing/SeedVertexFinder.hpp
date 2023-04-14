@@ -19,7 +19,7 @@
 #include <utility>
 
 namespace Acts {
-/// @class ZScanSeedVertexFinder
+/// @class SeedVertexFinder
 ///
 /// @brief Implements the vertex finder based on the track seeds
 /// 0. Assumes there is only 1 vertex and that it has a high multiplicity
@@ -29,7 +29,7 @@ namespace Acts {
 /// 4. Returns the point position as the vertex
 
 template <typename spacepoint_t>
-class ZScanSeedVertexFinder {
+class SeedVertexFinder {
     public:
         /// Configuration struct
         struct Config{
@@ -63,11 +63,11 @@ class ZScanSeedVertexFinder {
         ///
         /// @param cfg Configuration object 
         /// @param logger Logging instance
-        ZScanSeedVertexFinder(const Config& cfg,
-                              std::unique_ptr<const Logger> lgr = getDefaultLogger("ZScanSeedVertexFinder", Logging::DEBUG));
+        SeedVertexFinder(const Config& cfg,
+                              std::unique_ptr<const Logger> lgr = getDefaultLogger("SeedVertexFinder", Logging::DEBUG));
 
         /// @brief Destructor
-        ~ZScanSeedVertexFinder() = default;
+        ~SeedVertexFinder() = default;
 
         /// @brief Finds the vertex based on the provided spacepoints
         /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
@@ -131,4 +131,4 @@ class ZScanSeedVertexFinder {
 
 } // namespace Acts
 
-#include "Acts/Vertexing/ZScanSeedVertexFinder.ipp"
+#include "Acts/Vertexing/SeedVertexFinder.ipp"
