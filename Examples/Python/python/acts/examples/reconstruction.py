@@ -1539,12 +1539,13 @@ def addVertexFitting(
 
     return s
 
+
 def addSeedVertexFinding(
     s,
     outputDirRoot: Optional[Union[Path, str]] = None,
     logLevel: Optional[acts.logging.Level] = None,
     inputSpacePoints: Optional[str] = "spacepoints",
-    outputVertices: Optional[str] = "fittedSeedVertices"
+    outputVertices: Optional[str] = "fittedSeedVertices",
 ) -> None:
 
     from acts.examples import (
@@ -1555,10 +1556,10 @@ def addSeedVertexFinding(
     customLogLevel = acts.examples.defaultLogging(s, logLevel)
 
     findSeedVertex = SeedVertexFinderAlgorithm(
-            level=customLogLevel(),
-            inputSpacepoints=inputSpacePoints,
-            outputVertices=outputVertices,
-        )
+        level=customLogLevel(),
+        inputSpacepoints=inputSpacePoints,
+        outputVertices=outputVertices,
+    )
     s.addAlgorithm(findSeedVertex)
 
     inputParticles = "particles_input"
