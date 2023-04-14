@@ -34,7 +34,7 @@ detector, trackingGeometry, decorators = acts.examples.itk.buildITkGeometry(geo_
 field = acts.examples.MagneticFieldMapXyz(str(geo_dir / "bfield/ATLAS-BField-xyz.root"))
 rnd = acts.examples.RandomNumbers(seed=42)
 
-s = acts.examples.Sequencer(events=10000, numThreads=10, outputDir=str(outputDir))
+s = acts.examples.Sequencer(events=10, numThreads=100, outputDir=str(outputDir))
 
 import sys
 print('argument list: %s' % str(sys.argv))
@@ -50,6 +50,12 @@ if sys.argv[2]=="211":
     particle=acts.PdgParticle.ePionPlus
 if sys.argv[2]=="2112":
     particle=acts.PdgParticle.eProton
+if sys.argv[2]=="-13":
+    particle=acts.PdgParticle.eAntiMuon
+if sys.argv[2]=="-211":
+    particle=acts.PdgParticle.ePionMinus
+if sys.argv[2]=="-2112":
+    particle=acts.PdgParticle.eAntiProton
 
 if not ttbar_pu200:
     addParticleGun(
@@ -57,7 +63,7 @@ if not ttbar_pu200:
         MomentumConfig(minpT*u.GeV, 10*minpT*u.GeV, transverse=True),
         EtaConfig(-4.0, 4.0, uniform=True),
         # ParticleConfig(10, acts.PdgParticle.ePionPlus, randomizeCharge=True),
-        ParticleConfig(numParticles, particle, randomizeCharge=True),
+        ParticleConfig(numParticles, particle, randomizeCharge=False),
         vtxGen=acts.examples.GaussianVertexGenerator(
             stddev=acts.Vector4(0.01 * u.mm, 0.01 * u.mm, 0.01 * u.mm, 0.0 * u.ns),
             mean=acts.Vector4(vtxX*u.mm, vtxY*u.mm, vtxZ*u.mm, 0),
