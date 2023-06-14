@@ -29,6 +29,7 @@
 #include "ActsExamples/Io/Root/RootParticleWriter.hpp"
 #include "ActsExamples/Io/Root/RootPlanarClusterWriter.hpp"
 #include "ActsExamples/Io/Root/RootPropagationStepsWriter.hpp"
+#include "ActsExamples/Io/Root/RootSeedVertexPerformanceWriter.hpp"
 #include "ActsExamples/Io/Root/RootSimHitWriter.hpp"
 #include "ActsExamples/Io/Root/RootSpacepointWriter.hpp"
 #include "ActsExamples/Io/Root/RootTrackParameterWriter.hpp"
@@ -269,6 +270,12 @@ void addOutput(Context& ctx) {
                              "RootPlanarClusterWriter", inputClusters,
                              inputSimHits, filePath, fileMode, treeName,
                              trackingGeometry);
+
+  ACTS_PYTHON_DECLARE_WRITER(ActsExamples::RootSeedVertexPerformanceWriter, mex,
+                             "RootSeedVertexPerformanceWriter",
+                             inputAllTruthParticles,
+                             inputSelectedTruthParticles, inputVertices,
+                             inputTime, filePath, treeName, fileMode);
 
   ACTS_PYTHON_DECLARE_WRITER(ActsExamples::RootSimHitWriter, mex,
                              "RootSimHitWriter", inputSimHits, filePath,

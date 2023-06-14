@@ -9,6 +9,7 @@
 #include "Acts/Plugins/Python/Utilities.hpp"
 #include "ActsExamples/Vertexing/AdaptiveMultiVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/IterativeVertexFinderAlgorithm.hpp"
+#include "ActsExamples/Vertexing/SeedVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/TutorialVertexFinderAlgorithm.hpp"
 #include "ActsExamples/Vertexing/VertexFitterAlgorithm.hpp"
 
@@ -46,6 +47,10 @@ void addVertexing(Context& ctx) {
       ActsExamples::VertexFitterAlgorithm, mex, "VertexFitterAlgorithm",
       inputTrackParameters, inputTrajectories, inputProtoVertices,
       outputVertices, bField, doConstrainedFit, constraintPos, constraintCov);
+
+  ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::SeedVertexFinderAlgorithm, mex,
+                                "SeedVertexFinderAlgorithm", inputSpacepoints,
+                                outputVertices);
 }
 
 }  // namespace Acts::Python
