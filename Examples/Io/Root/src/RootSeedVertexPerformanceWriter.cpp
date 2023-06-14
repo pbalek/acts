@@ -171,8 +171,9 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
     for (const auto& particle : allTruthParticles) {
       int priVtxId = particle.particleId().vertexPrimary();
 
-      if (priVtxId != maxOccurrenceId)
+      if (priVtxId != maxOccurrenceId) {
         continue;
+      }
       // this is the truth vertex
       const auto& truePos = particle.position();
 
