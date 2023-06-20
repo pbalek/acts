@@ -20,6 +20,7 @@
 #include <vector>
 
 namespace Acts {
+
 /// @class SeedVertexFinder
 ///
 /// @brief Implements the vertex finder based on the track seeds
@@ -31,7 +32,6 @@ namespace Acts {
 /// (minimalizeWRT="planes") or rays (minimalizeWRT="rays") defined by the the
 /// seeds
 /// 4. Returns the point position as the vertex
-
 template <typename spacepoint_t>
 class SeedVertexFinder {
  public:
@@ -120,8 +120,8 @@ class SeedVertexFinder {
           b(bb),
           c(cc),
           ray(Acts::Vector3::Zero(), Acts::Vector3::Zero()) {}
-    const spacepoint_t &a, &b, &c;
 
+    const spacepoint_t &a, &b, &c;
     Acts::Ray3D ray;
   };
 
@@ -149,7 +149,7 @@ class SeedVertexFinder {
   std::vector<Triplet> findTriplets(
       const std::vector<std::vector<std::vector<
           std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>&
-          sorted_spacepoints);
+          sortedSpacepoints);
 
   /// @brief Validate the triplet based on "maxXYdeviation", "maxXYZdeviation", "maxZPosition", and "maxRPosition"
   /// @param triplet A single triplet to be validated

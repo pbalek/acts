@@ -453,9 +453,7 @@ Acts::SeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
 
   Acts::Vector3 ba = b - a, ca = c - a;
 
-  Acts::Vector3 abg = ba.cross(ca);
-  // vector (alpha,beta,gamma) normalized to unity for convenience
-  abg /= std::sqrt(abg.dot(abg));
+  Acts::Vector3 abg = ba.cross(ca).normalize();
   Acts::ActsScalar delta = -1. * abg.dot(a);
 
   // plane (alpha*x + beta*y + gamma*z + delta = 0), splitted to {{alpha, beta,
@@ -516,7 +514,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
       for (auto& triplet : triplets_with_planes) {
         const auto& abg = triplet.first.first;
         const auto& delta = triplet.first.second;
-        Acts::ActsScalar distance = fabs(abg.dot(vtx) + delta);
+        Acts::ActsScalar distance = std::abs(abg.dot(vtx) + delta);
 
         triplet.second = distance;
       }
@@ -531,8 +529,8 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
 
       for (unsigned int tr = threshold + 1; tr < triplets_with_planes.size();
            ++tr) {
-        const auto& abg = triplets_with_planes.at(tr).first.first;
-        const auto& delta = triplets_with_planes.at(tr).first.second;
+        const auto& abg = triplets_with_planes[tr].first.first;
+        const auto& delta = triplets_with_planes[tr].first.second;
 
         // remove this triplet from A and B
         A -= 2. * (abg * abg.transpose());
@@ -639,8 +637,8 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
 
       for (unsigned int tr = threshold + 1; tr < triplets_with_rays.size();
            ++tr) {
-        const auto& start_point = triplets_with_rays.at(tr).first.first;
-        const auto& direction = triplets_with_rays.at(tr).first.second;
+        const auto& start_point = triplets_with_rays[tr].first.first;
+        const auto& direction = triplets_with_rays[tr].first.second;
 
         // remove this triplet from A and B
         A += 2. * (direction * direction.transpose());
