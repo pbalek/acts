@@ -37,59 +37,60 @@ class SeedVertexFinder {
  public:
   /// Configuration struct
   struct Config {
-    // maximum deviation in phi between the near and middle spacepoints or
-    // middle and far spacepoints
-    float maxPhideviation = 0.08;
-    // maximum deviation in X-Y between the first 2 spacepoints and the last 2
-    // spacepoints
-    float maxXYdeviation = 0.08;
-    // maximum deviation in 3D between the first 2 spacepoints and the last 2
-    // spacepoints
-    float maxXYZdeviation = 0.08;
+    /// maximum deviation in phi between the near and middle spacepoints or
+    /// middle and far spacepoints
+    Acts::ActsScalar maxPhideviation = 0.08;
+    /// maximum deviation in X-Y between the first 2 spacepoints and the last 2
+    /// spacepoints
+    Acts::ActsScalar maxXYdeviation = 0.08;
+    /// maximum deviation in 3D between the first 2 spacepoints and the last 2
+    /// spacepoints
+    Acts::ActsScalar maxXYZdeviation = 0.08;
 
-    // minimum angle between Z axis and a triplet, effectively removing triplets
-    // with large |eta|
-    float minTheta = 1.;
+    /// minimum angle between Z axis and a triplet, effectively removing triplets
+    /// with large |eta|
+    Acts::ActsScalar minTheta = 1.;
 
-    // thresholds for near, middle, and far spacepoints
-    float rMinNear = 20.f * Acts::UnitConstants::mm;
-    float rMaxNear = 60.f * Acts::UnitConstants::mm;
-    float rMinMiddle = 150.f * Acts::UnitConstants::mm;
-    float rMaxMiddle = 190.f * Acts::UnitConstants::mm;
-    float rMinFar = 280.f * Acts::UnitConstants::mm;
-    float rMaxFar = 320.f * Acts::UnitConstants::mm;
+    /// thresholds for near, middle, and far spacepoints
+    Acts::ActsScalar rMinNear = 20.f * Acts::UnitConstants::mm;
+    Acts::ActsScalar rMaxNear = 60.f * Acts::UnitConstants::mm;
+    Acts::ActsScalar rMinMiddle = 150.f * Acts::UnitConstants::mm;
+    Acts::ActsScalar rMaxMiddle = 190.f * Acts::UnitConstants::mm;
+    Acts::ActsScalar rMinFar = 280.f * Acts::UnitConstants::mm;
+    Acts::ActsScalar rMaxFar = 320.f * Acts::UnitConstants::mm;
 
-    // number of phi slices, at least 3 to avoid duplicities
-    // it should be less than 2*pi/maxPhideviation in order not to loop over
-    // triplets that will be rejected by maxPhideviation anyway
-    int numPhiSlices = 60;
-    // use only a fraction of available phi slices to speed up calculations;
-    float useFracPhiSlices = 0.5;
+    /// number of phi slices, at least 3 to avoid duplicities
+    /// it should be less than 2*pi/maxPhideviation in order not to loop over
+    /// triplets that will be rejected by maxPhideviation anyway
+    std::uint32_t numPhiSlices = 60;
+    /// use only a fraction of available phi slices to speed up calculations;
+    Acts::ActsScalar useFracPhiSlices = 0.5;
 
-    // number of z slices
-    int numZSlices = 150;
-    // use only a fraction of available z slices to speed up calculations;
-    float useFracZSlices = 0.5;
-    // maximum |z| to consider, z slices will be done within the range
-    // (-maxAbsZ,maxAbsZ) values of maxAbsZ, maxZPosition, rMaxFar, and minTheta
-    // should be set reasonably with respect to each other
-    float maxAbsZ = 450. * Acts::UnitConstants::mm;
+    /// number of z slices
+    std::uint32_t numZSlices = 150;
+    /// use only a fraction of available z slices to speed up calculations;
+    Acts::ActsScalar useFracZSlices = 0.5;
+    /// maximum |z| to consider, z slices will be done within the range
+    /// (-maxAbsZ,maxAbsZ)
+    /// values of maxAbsZ, maxZPosition, rMaxFar, and minTheta should be
+    /// set reasonably with respect to each other
+    Acts::ActsScalar maxAbsZ = 450. * Acts::UnitConstants::mm;
 
-    // maximum Z position of the vertex at the point closest to the Z axis
-    float maxZPosition = 200.f * Acts::UnitConstants::mm;
-    // maximum R position of the vertex at the point closest to the Z axis
-    float maxRPosition = 10.f * Acts::UnitConstants::mm;
+    /// maximum Z position of the vertex at the point closest to the Z axis
+    Acts::ActsScalar maxZPosition = 200.f * Acts::UnitConstants::mm;
+    /// maximum R position of the vertex at the point closest to the Z axis
+    Acts::ActsScalar maxRPosition = 10.f * Acts::UnitConstants::mm;
 
-    // chi^2 minimalization will happen with respect to "planes" or "rays"
+    /// chi^2 minimalization will happen with respect to "planes" or "rays"
     std::string minimalizeWRT = "planes";
 
-    // maximum number of iterations when discarding triplets with the largest
-    // chi^2
-    int maxIterations = 20;
-    // each iteration, discard this fraction of triplets with the largest chi^2
-    float removeFraction = 0.10;
-    // if the vertex estimation moves less than this, stop iterations
-    float minVtxShift = 0.3f * Acts::UnitConstants::mm;
+    /// maximum number of iterations when discarding triplets with the largest
+    /// chi^2
+    std::uint32_t maxIterations = 20;
+    /// each iteration, discard this fraction of triplets with the largest chi^2
+    Acts::ActsScalar removeFraction = 0.10;
+    /// if the vertex estimation moves less than this, stop iterations
+    Acts::ActsScalar minVtxShift = 0.3f * Acts::UnitConstants::mm;
   };
 
   /// Const access to the config
@@ -108,61 +109,82 @@ class SeedVertexFinder {
 
   /// @brief Finds the vertex based on the provided spacepoints
   /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
-  /// @return Position of the vertex along z-axis
-  Acts::Vector3 findVertex(const std::vector<spacepoint_t>& spacepoints);
+  /// @return Position of the vertex
+  Acts::Vector3 findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
  private:
-  /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector
+  /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector. Also stores straight line fit through the spacepoints in case minimalizeWRT=="rays", so it's not fitted twice
   struct Triplet {
     Triplet(const spacepoint_t& aa, const spacepoint_t& bb,
             const spacepoint_t& cc)
-        : a(aa),
-          b(bb),
-          c(cc),
-          ray(Acts::Vector3::Zero(), Acts::Vector3::Zero()) {}
+      : a(aa),
+        b(bb),
+        c(cc),
+        ray(Acts::Vector3::Zero(), Acts::Vector3::Zero()) {}
 
     const spacepoint_t &a, &b, &c;
     Acts::Ray3D ray;
   };
 
+  /// @brief Struct to store sorted spacepoints for each layer (near, middle, and far), for each slice of phi, and for each slice of z
+  struct SortedSpacepoints {
+    SortedSpacepoints(const int phiSize, const int zSize)
+    {
+      std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>> helper = {};
+      std::vector<std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>> helperZ(zSize, helper);
+      std::vector<std::vector<std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>> helperPhi(phiSize, helperZ);
+      sortedSP.fill(helperPhi);
+    }
+
+    /// @brief Provides non-const vector of spacepoints for a given layer, phi slice, and z slice
+    /// @param layer Index of the layer (near=0, middle=1, far=2)
+    /// @param phi Index of the phi slice
+    /// @param z Index of the z slice
+    /// @return Non-const vector of spacepoints
+    inline std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>& addSP(int layer, int phi, int z)
+    {
+        return sortedSP[layer][phi][z];
+    }
+
+    /// @brief Provides const vector of spacepoints for a given layer, phi slice, and z slice
+    /// @param layer Index of the layer (near=0, middle=1, far=2)
+    /// @param phi Index of the phi slice
+    /// @param z Index of the z slice
+    /// @return Const vector of spacepoints
+    inline const std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>& getSP(int layer, int phi, int z) const
+    {
+        return sortedSP[layer][phi][z];
+    }
+
+    std::array<std::vector<std::vector<std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>, 3> sortedSP;
+  };
+
   /// Configuration instance
   Config m_cfg;
 
-  /// @brief Sorts spacepoints into a separate vectors for near, middle, and far spacepoints; and for each slice of phi
+  /// @brief Sorts spacepoints into a separate vectors for near, middle, and far spacepoints; for each slice of phi; and for each slice of z
   /// @param spacepoints Vector of the input spacepoints;
-  /// @return Vector of vectors for each set of spacepoints
-  std::vector<std::vector<std::vector<
-      std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>
-  sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
+  /// @return Struct of the sorted spacepoints
+  Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints sortSpacepoints(const std::vector<spacepoint_t>& spacepoints) const;
 
-  /// @brief
-  /// @param a
-  /// @param b
-  /// @return
-  static bool compareSpacepoints(
-      std::pair<spacepoint_t const*, Acts::ActsScalar>& a,
-      std::pair<spacepoint_t const*, Acts::ActsScalar>& b);
-
-  /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints; and for each slice of phi
-  /// @param sorted_spacepoints Vector of input vector of vectors for each set of spacepoints
+  /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints; for each slice of phi; and for each slice of z
+  /// @param sortedSpacepoints Struct of the sorted spacepointss
   /// @return Vector of valid triplets
   std::vector<Triplet> findTriplets(
-      const std::vector<std::vector<std::vector<
-          std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>&
-          sortedSpacepoints);
+      const Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints& sortedSpacepoints) const;
 
   /// @brief Validate the triplet based on "maxXYdeviation", "maxXYZdeviation", "maxZPosition", and "maxRPosition"
   /// @param triplet A single triplet to be validated
   /// @return True if the deviations and fitted ray are within the configured ranges
   ///         If "minimalizeWRT"=="rays", then the fitted ray is also saved to
   ///         the triplet for later
-  bool isTripletValid(Triplet& triplet);
+  bool tripletValidationAndUpdate(Triplet& triplet) const;
 
   /// @brief Calculates equation of the plane (alpha*x + beta*y + gamma*z + delta = 0), given the three points
   /// @param triplet A single triplet (with 3 spacepoints)
   /// @return A pair of {{alpha,beta,gamma},delta}
-  std::pair<Acts::Vector3, Acts::ActsScalar> makePlaneFromTriplet(
-      const Triplet triplet) const;
+  static std::pair<Acts::Vector3, Acts::ActsScalar> makePlaneFromTriplet(
+      const Triplet& triplet);
 
   /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all planes defined by the triplets
   /// @param triplets Vector of all valid triplets
@@ -173,7 +195,7 @@ class SeedVertexFinder {
   /// @brief Calculates parameters of the ray (starting point + direction), given the three points
   /// @param triplet A single triplet (with 3 spacepoints)
   /// @return A ray of {starting_point, direction}
-  Acts::Ray3D makeRayFromTriplet(const Triplet triplet) const;
+  static Acts::Ray3D makeRayFromTriplet(const Triplet& triplet);
 
   /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all rays fitted through the triplets
   /// @param triplets Vector of all valid triplets

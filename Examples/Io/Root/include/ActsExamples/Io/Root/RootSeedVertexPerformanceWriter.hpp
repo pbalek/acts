@@ -75,11 +75,11 @@ class RootSeedVertexPerformanceWriter final
   TTree* m_outputTree{nullptr};  ///< The output tree
 
   std::vector<float>
-      m_diffx;  ///< Difference in x positon between reco and true vtx
+      m_diffX;  ///< Difference in x positon between reco and true vtx
   std::vector<float>
-      m_diffy;  ///< Difference in y positon between reco and true vtx
+      m_diffY;  ///< Difference in y positon between reco and true vtx
   std::vector<float>
-      m_diffz;  ///< Difference in z positon between reco and true vtx
+      m_diffZ;  ///< Difference in z positon between reco and true vtx
 
   std::vector<float> m_truthX;
   std::vector<float> m_truthY;

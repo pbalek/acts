@@ -15,102 +15,40 @@ Acts::SeedVertexFinder<spacepoint_t>::SeedVertexFinder(
     const Acts::SeedVertexFinder<spacepoint_t>::Config& cfg,
     std::unique_ptr<const Logger> lgr)
     : m_cfg(cfg), m_logger(std::move(lgr)) {
-  if (std::isnan(cfg.maxPhideviation)) {
-    ACTS_ERROR("value of maxPhideviation was not initialized");
-  }
-  if (std::isnan(cfg.maxXYdeviation)) {
-    ACTS_ERROR("value of maxXYdeviation was not initialized");
-  }
-  if (std::isnan(cfg.maxXYZdeviation)) {
-    ACTS_ERROR("value of maxXYZdeviation was not initialized");
-  }
-  if (std::isnan(cfg.minTheta)) {
-    ACTS_ERROR("value of minTheta was not initialized");
-  }
-  if (std::isnan(cfg.rMinNear)) {
-    ACTS_ERROR("value of rMinNear was not initialized");
-  }
-  if (std::isnan(cfg.rMaxNear)) {
-    ACTS_ERROR("value of rMaxNear was not initialized");
-  }
-  if (std::isnan(cfg.rMinMiddle)) {
-    ACTS_ERROR("value of rMinMiddle was not initialized");
-  }
-  if (std::isnan(cfg.rMaxMiddle)) {
-    ACTS_ERROR("value of rMaxMiddle was not initialized");
-  }
-  if (std::isnan(cfg.rMinFar)) {
-    ACTS_ERROR("value of rMinFar was not initialized");
-  }
-  if (std::isnan(cfg.rMaxFar)) {
-    ACTS_ERROR("value of rMaxFar was not initialized");
-  }
-  if (std::isnan(cfg.numPhiSlices)) {
-    ACTS_ERROR("value of numPhiSlices was not initialized");
-  }
   if (cfg.numPhiSlices < 3) {
     ACTS_INFO("value of numPhiSlices is "
               << cfg.numPhiSlices
               << ", which is less than 3. There will be duplicate triplets.");
   }
-  if (std::isnan(cfg.useFracPhiSlices)) {
-    ACTS_ERROR("value of useFracPhiSlices was not initialized");
-  }
-  if (cfg.useFracPhiSlices < 0. || cfg.useFracPhiSlices >= 1.) {
+  if (cfg.useFracPhiSlices <= 0. || cfg.useFracPhiSlices > 1.) {
     ACTS_ERROR("value of useFracPhiSlices is "
                << cfg.useFracPhiSlices
                << ", allowed values are between 0 and 1");
   }
-  if (std::isnan(cfg.numZSlices)) {
-    ACTS_ERROR("value of numZSlices was not initialized");
-  }
-  if (std::isnan(cfg.useFracZSlices)) {
-    ACTS_ERROR("value of useFracZSlices was not initialized");
-  }
-  if (cfg.useFracZSlices < 0. || cfg.useFracZSlices >= 1.) {
+  if (cfg.useFracZSlices <= 0. || cfg.useFracZSlices > 1.) {
     ACTS_ERROR("value of useFracZSlices is "
                << cfg.useFracZSlices << ", allowed values are between 0 and 1");
-  }
-  if (std::isnan(cfg.maxAbsZ)) {
-    ACTS_ERROR("value of maxAbsZ was not initialized");
-  }
-  if (std::isnan(cfg.maxZPosition)) {
-    ACTS_ERROR("value of maxZPosition was not initialized");
-  }
-  if (std::isnan(cfg.maxRPosition)) {
-    ACTS_ERROR("value of maxRPosition was not initialized");
   }
   if (cfg.minimalizeWRT != "planes" && cfg.minimalizeWRT != "rays") {
     ACTS_ERROR("value of minimalizeWRT is "
                << cfg.minimalizeWRT
                << ", allowed values are \"planes\" or \"rays\" ");
   }
-  if (std::isnan(cfg.maxIterations)) {
-    ACTS_ERROR("value of maxIterations was not initialized");
-  }
-  if (std::isnan(cfg.removeFraction)) {
-    ACTS_ERROR("value of removeFraction was not initialized");
-  }
   if (cfg.removeFraction < 0. || cfg.removeFraction >= 1.) {
     ACTS_ERROR("value of removeFraction is "
                << cfg.removeFraction << ", allowed values are between 0 and 1");
-  }
-  if (std::isnan(cfg.minVtxShift)) {
-    ACTS_ERROR("value of minVtxShift was not initialized");
   }
 }
 
 template <typename spacepoint_t>
 Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(
-    const std::vector<spacepoint_t>& spacepoints) {
+    const std::vector<spacepoint_t>& spacepoints) const {
   // sort spacepoints to different phi and z bins
-  std::vector<std::vector<std::vector<
-      std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>
-      sorted_spacepoints = sortSpacepoints(spacepoints);
+  Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints sortedSpacepoints = sortSpacepoints(spacepoints);
 
   // find triplets
   std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet> triplets =
-      findTriplets(sorted_spacepoints);
+      findTriplets(sortedSpacepoints);
 
   // if no valid triplets found
   if (triplets.empty()) {
@@ -134,29 +72,22 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(
 }
 
 template <typename spacepoint_t>
-std::vector<std::vector<
-    std::vector<std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>
-Acts::SeedVertexFinder<spacepoint_t>::sortSpacepoints(
+typename Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints Acts::SeedVertexFinder<spacepoint_t>::sortSpacepoints(
     const std::vector<spacepoint_t>& spacepoints) const {
-  std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>> helper = {};
-  std::vector<std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>
-      helper_eta(m_cfg.numZSlices, helper);
-
-  std::vector<std::vector<
-      std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>
-      near_spacepoints(m_cfg.numPhiSlices, helper_eta),
-      middle_spacepoints(m_cfg.numPhiSlices, helper_eta),
-      far_spacepoints(m_cfg.numPhiSlices, helper_eta);
+  Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints sortedSpacepoints(m_cfg.numPhiSlices, m_cfg.numZSlices);
 
   for (const auto& sp : spacepoints) {
     // phi will be saved for later
     Acts::ActsScalar phi = detail::radian_pos(std::atan2(sp.y(), sp.x()));
-    int phislice = (int)(phi / (2 * M_PI) * m_cfg.numPhiSlices);
+    std::uint32_t phislice = (std::uint32_t)(phi / (2 * M_PI) * m_cfg.numPhiSlices);
+    if(phislice>=m_cfg.numPhiSlices) {
+      phislice=0;
+    }
 
-    if (fabs(sp.z()) >= m_cfg.maxAbsZ) {
+    if (std::abs(sp.z()) >= m_cfg.maxAbsZ) {
       continue;
     }
-    int zslice = (int)((sp.z() + m_cfg.maxAbsZ) / (2 * m_cfg.maxAbsZ) *
+    std::uint32_t zslice = (std::uint32_t)((sp.z() + m_cfg.maxAbsZ) / (2 * m_cfg.maxAbsZ) *
                        m_cfg.numZSlices);
 
     // input spacepoint is sorted into one subset
@@ -166,41 +97,35 @@ Acts::SeedVertexFinder<spacepoint_t>::sortSpacepoints(
             m_cfg.useFracPhiSlices) {
           continue;
         }
-        near_spacepoints.at(phislice).at(zslice).emplace_back(
+        sortedSpacepoints.addSP(0,phislice,zslice).emplace_back(
             (spacepoint_t const*)&sp, phi);
       }
-    } else {
-      if (sp.r() < m_cfg.rMinFar) {
-        if (sp.r() < m_cfg.rMaxMiddle) {
-          if (std::fmod(m_cfg.useFracZSlices * zslice, 1.0) >=
-              m_cfg.useFracZSlices) {
-            continue;
-          }
-          middle_spacepoints.at(phislice).at(zslice).emplace_back(
-              (spacepoint_t const*)&sp, phi);
+    } else if (sp.r() < m_cfg.rMinFar) {
+      if (sp.r() < m_cfg.rMaxMiddle) {
+        if (std::fmod(m_cfg.useFracZSlices * zslice, 1.0) >=
+            m_cfg.useFracZSlices) {
+          continue;
         }
-      } else {
-        if (sp.r() < m_cfg.rMaxFar) {
-          far_spacepoints.at(phislice).at(zslice).emplace_back(
-              (spacepoint_t const*)&sp, phi);
-        }
+        sortedSpacepoints.addSP(1,phislice,zslice).emplace_back(
+            (spacepoint_t const*)&sp, phi);
       }
+    } else if (sp.r() < m_cfg.rMaxFar) {
+      sortedSpacepoints.addSP(2,phislice,zslice).emplace_back(
+            (spacepoint_t const*)&sp, phi);
     }
   }
 
-  return {near_spacepoints, middle_spacepoints, far_spacepoints};
+  return sortedSpacepoints;
 }
 
 template <typename spacepoint_t>
 std::vector<typename Acts::SeedVertexFinder<spacepoint_t>::Triplet>
 Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
-    const std::vector<std::vector<std::vector<
-        std::vector<std::pair<spacepoint_t const*, Acts::ActsScalar>>>>>&
-        sorted_spacepoints) {
+    const Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints& sortedSpacepoints) const {
   std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
-  int phistep =
-      (int)(m_cfg.maxPhideviation / (2 * M_PI / m_cfg.numPhiSlices)) + 1;
+  std::uint32_t phiStep =
+      (std::uint32_t)(m_cfg.maxPhideviation / (2 * M_PI / m_cfg.numPhiSlices)) + 1;
 
   // calculate limits for middle spacepoints
   Acts::Vector2 vecA{-m_cfg.maxAbsZ + m_cfg.maxZPosition, m_cfg.rMinFar};
@@ -208,8 +133,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
   Acts::Vector2 vecB = {vecA[1], -vecA[0]};
   vecB /= std::tan(m_cfg.maxXYZdeviation);
   Acts::Vector2 posR = Acts::Vector2(-m_cfg.maxZPosition, 0.) + vecA + vecB;
-  Acts::ActsScalar R =
-      std::sqrt(vecA.dot(vecA)) / std::sin(m_cfg.maxXYZdeviation);
+  Acts::ActsScalar R = vecA.norm() / std::sin(m_cfg.maxXYZdeviation);
   Acts::ActsScalar constB = -2. * posR[0];
   Acts::ActsScalar constC =
       posR[0] * posR[0] +
@@ -228,157 +152,142 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
   Acts::ActsScalar zBinLength = 2. * m_cfg.maxAbsZ / m_cfg.numZSlices;
 
   // limits in terms of slice numbers
-  int limitMiddleSlice_from = (int)((-maxZMiddle + m_cfg.maxAbsZ) / zBinLength);
-  int limitMiddleSlice_to =
-      (int)((maxZMiddle + m_cfg.maxAbsZ) / zBinLength + 1);
-  int limitAbsZSlice_from =
-      (int)((-m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 0.01);
-  int limitAbsZSlice_to =
-      (int)((m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 1.01);
+  std::uint32_t limitMiddleSliceFrom = (std::uint32_t)((-maxZMiddle + m_cfg.maxAbsZ) / zBinLength);
+  std::uint32_t limitMiddleSliceTo =
+      (std::uint32_t)((maxZMiddle + m_cfg.maxAbsZ) / zBinLength + 1);
+  std::uint32_t limitAbsZSliceFrom =
+      (std::uint32_t)((-m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 0.01);
+  std::uint32_t limitAbsZSliceTo =
+      (std::uint32_t)((m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 1.01);
 
-  for (int middlez = limitMiddleSlice_from; middlez < limitMiddleSlice_to;
-       ++middlez) {
+  for (std::uint32_t middleZ = limitMiddleSliceFrom; middleZ < limitMiddleSliceTo;
+       ++middleZ) {
     // skip slices that are empty anyway
-    if (std::fmod(m_cfg.useFracZSlices * middlez, 1.0) >=
+    if (std::fmod(m_cfg.useFracZSlices * middleZ, 1.0) >=
         m_cfg.useFracZSlices) {
       continue;
     }
 
     // calculate limits for near spacepoints, assuming the middle spacepoints
     // are within some boundaries
-    bool isLess_from = (middlez < limitAbsZSlice_from);
-    float deltaZfrom = (middlez - limitAbsZSlice_from - 1) * zBinLength;
-    float angleZfrom =
-        std::atan2(rMiddle[isLess_from], deltaZfrom) + m_cfg.maxXYZdeviation;
-    int nearz_from = 0;
+    bool isLessFrom = (middleZ < limitAbsZSliceFrom);
+    Acts::ActsScalar deltaZfrom = (middleZ - limitAbsZSliceFrom - 1) * zBinLength;
+    Acts::ActsScalar angleZfrom =
+        std::atan2(rMiddle[isLessFrom], deltaZfrom) + m_cfg.maxXYZdeviation;
+    std::uint32_t nearZFrom = 0;
     if (angleZfrom < M_PI) {
-      float new_deltaZfrom =
-          rMiddle[isLess_from] / std::tan(angleZfrom) / zBinLength;
-      nearz_from =
-          (int)((new_deltaZfrom)*rNearRatio[isLess_from]) + limitAbsZSlice_from;
-      if (nearz_from < 0) {
-        nearz_from = 0;
-      }
+      Acts::ActsScalar new_deltaZfrom =
+          rMiddle[isLessFrom] / std::tan(angleZfrom) / zBinLength;
+      nearZFrom = (std::uint32_t)std::max(new_deltaZfrom*rNearRatio[isLessFrom] + limitAbsZSliceFrom, 0.);
     }
 
-    bool isLess_to = (middlez < limitAbsZSlice_to);
-    float deltaZto = (middlez - limitAbsZSlice_to + 1) * zBinLength;
-    float angleZto =
-        std::atan2(rMiddle[!isLess_to], deltaZto) - m_cfg.maxXYZdeviation;
-    int nearz_to = m_cfg.numZSlices;
+    bool isLessTo = (middleZ < limitAbsZSliceTo);
+    Acts::ActsScalar deltaZto = (middleZ - limitAbsZSliceTo + 1) * zBinLength;
+    Acts::ActsScalar angleZto =
+        std::atan2(rMiddle[!isLessTo], deltaZto) - m_cfg.maxXYZdeviation;
+    std::uint32_t nearZTo = m_cfg.numZSlices;
     if (angleZto > 0) {
-      float new_deltaZto =
-          rMiddle[!isLess_to] / std::tan(angleZto) / zBinLength;
-      nearz_to =
-          (int)((new_deltaZto)*rNearRatio[!isLess_to]) + limitAbsZSlice_to;
-      if (nearz_to > m_cfg.numZSlices) {
-        nearz_to = m_cfg.numZSlices;
+      Acts::ActsScalar new_deltaZto =
+          rMiddle[!isLessTo] / std::tan(angleZto) / zBinLength;
+      nearZTo = (std::uint32_t)std::max(new_deltaZto*rNearRatio[!isLessTo] + limitAbsZSliceTo, 0.);
+      if (nearZTo > m_cfg.numZSlices) {
+        nearZTo = m_cfg.numZSlices;
       }
     }
 
-    for (int nearz = nearz_from; nearz < nearz_to; ++nearz) {
+    for (std::uint32_t nearZ = nearZFrom; nearZ < nearZTo; ++nearZ) {
       // calculate limits for far spacepoits, assuming middle and near
       // spacepoits are within some boundaries
-      bool isMiddleLess = (middlez < nearz);
+      bool isMiddleLess = (middleZ < nearZ);
 
-      float delta2Zfrom = (middlez - nearz - 1) * zBinLength;
-      float angle2Zfrom = std::atan2(rFarDelta[isMiddleLess], delta2Zfrom) +
+      Acts::ActsScalar delta2Zfrom = (middleZ - nearZ - 1) * zBinLength;
+      Acts::ActsScalar angle2Zfrom = std::atan2(rFarDelta[isMiddleLess], delta2Zfrom) +
                           m_cfg.maxXYZdeviation;
-      int farz_from = 0;
+      std::uint32_t farZFrom = 0;
       if (angle2Zfrom < M_PI) {
-        farz_from = (int)(rFarDelta[isMiddleLess] / std::tan(angle2Zfrom) /
-                          zBinLength) +
-                    middlez;
-        if (farz_from < 0) {
-          farz_from = 0;
-        } else {
-          if (farz_from >= m_cfg.numZSlices) {
-            continue;
-          }
+        farZFrom = (std::uint32_t)std::max((rFarDelta[isMiddleLess] / std::tan(angle2Zfrom) /
+                          zBinLength) + middleZ, 0.);
+        if (farZFrom >= m_cfg.numZSlices) {
+          continue;
         }
       }
 
-      float delta2Zto = (middlez - nearz + 1) * zBinLength;
-      float angle2Zto = std::atan2(rFarDelta[!isMiddleLess], delta2Zto) -
+      Acts::ActsScalar delta2Zto = (middleZ - nearZ + 1) * zBinLength;
+      Acts::ActsScalar angle2Zto = std::atan2(rFarDelta[!isMiddleLess], delta2Zto) -
                         m_cfg.maxXYZdeviation;
-      int farz_to = m_cfg.numZSlices;
+      std::uint32_t farZTo = m_cfg.numZSlices;
       if (angle2Zto > 0) {
-        farz_to =
-            (int)(rFarDelta[!isMiddleLess] / std::tan(angle2Zto) / zBinLength) +
-            middlez + 1;
-        if (farz_to > m_cfg.numZSlices) {
-          farz_to = m_cfg.numZSlices;
-        } else {
-          if (farz_to < 0) {
-            continue;
-          }
+        farZTo =
+            (std::uint32_t)std::max((rFarDelta[!isMiddleLess] / std::tan(angle2Zto) / zBinLength) +
+            middleZ + 1, 0.);
+        if (farZTo > m_cfg.numZSlices) {
+          farZTo = m_cfg.numZSlices;
+        } else if (farZTo == 0) {
+          continue;
         }
       }
 
-      for (int farz = farz_from; farz < farz_to; farz++) {
+      for (std::uint32_t farZ = farZFrom; farZ < farZTo; farZ++) {
         // loop over near phi slices
-        for (int nearphi = 0; nearphi < m_cfg.numPhiSlices; ++nearphi) {
+        for (std::uint32_t nearPhi = 0; nearPhi < m_cfg.numPhiSlices; ++nearPhi) {
           // skip slices that are empty anyway
-          if (std::fmod(m_cfg.useFracPhiSlices * nearphi, 1.0) >=
+          if (std::fmod(m_cfg.useFracPhiSlices * nearPhi, 1.0) >=
               m_cfg.useFracPhiSlices) {
             continue;
           }
 
           // loop over some middle phi slices
-          for (int middlephi_h = nearphi - phistep;
-               middlephi_h <= nearphi + phistep; ++middlephi_h) {
-            int middlephi =
-                (middlephi_h + m_cfg.numPhiSlices) % m_cfg.numPhiSlices;
+          for (std::uint32_t middlePhi_h = nearPhi - phiStep;
+               middlePhi_h <= nearPhi + phiStep; ++middlePhi_h) {
+            std::uint32_t middlePhi =
+                (middlePhi_h + m_cfg.numPhiSlices) % m_cfg.numPhiSlices;
             // loop over some far phi slices
-            for (int farphi_h = middlephi - phistep;
-                 farphi_h <= middlephi + phistep; ++farphi_h) {
-              int farphi = (farphi_h + m_cfg.numPhiSlices) % m_cfg.numPhiSlices;
+            for (std::uint32_t farPhi_h = middlePhi - phiStep;
+                 farPhi_h <= middlePhi + phiStep; ++farPhi_h) {
+              std::uint32_t farPhi = (farPhi_h + m_cfg.numPhiSlices) % m_cfg.numPhiSlices;
 
               // for all near spacepoints in this slice
-              for (const auto& near_sp :
-                   sorted_spacepoints.at(0).at(nearphi).at(nearz)) {
-                Acts::ActsScalar phiA = near_sp.second;
+              for (const auto& nearSP : sortedSpacepoints.getSP(0,nearPhi,nearZ)) {
+                Acts::ActsScalar phiA = nearSP.second;
                 // for all middle spacepoints in this slice
-                for (const auto& middle_sp :
-                     sorted_spacepoints.at(1).at(middlephi).at(middlez)) {
-                  Acts::ActsScalar phiB = middle_sp.second;
-                  Acts::ActsScalar delta_phiAB =
+                for (const auto& middleSP : sortedSpacepoints.getSP(1,middlePhi,middleZ)) {
+                  Acts::ActsScalar phiB = middleSP.second;
+                  Acts::ActsScalar deltaPhiAB =
                       detail::difference_periodic(phiA, phiB, 2 * M_PI);
-                  if (std::abs(delta_phiAB) > m_cfg.maxPhideviation) {
+                  if (std::abs(deltaPhiAB) > m_cfg.maxPhideviation) {
                     continue;
                   }
                   // for all far spacepoints in this slice
-                  for (const auto& far_sp :
-                       sorted_spacepoints.at(2).at(farphi).at(farz)) {
-                    Acts::ActsScalar phiC = far_sp.second;
-                    Acts::ActsScalar delta_phiBC =
+                  for (const auto& farSP : sortedSpacepoints.getSP(2,farPhi,farZ)) {
+                    Acts::ActsScalar phiC = farSP.second;
+                    Acts::ActsScalar deltaPhiBC =
                         detail::difference_periodic(phiB, phiC, 2 * M_PI);
-                    if (std::abs(delta_phiBC) > m_cfg.maxPhideviation) {
+                    if (std::abs(deltaPhiBC) > m_cfg.maxPhideviation) {
                       continue;
                     }
 
                     Acts::SeedVertexFinder<spacepoint_t>::Triplet tr(
-                        *near_sp.first, *middle_sp.first, *far_sp.first);
+                        *nearSP.first, *middleSP.first, *farSP.first);
 
-                    if (isTripletValid(tr)) {
+                    if (tripletValidationAndUpdate(tr)) {
                       triplets.push_back(tr);
                     }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+                  } // loop over far spacepoints
+                } // loop over middle spacepoints
+              } // loop over near spacepoints
+            } // loop over far phi bins
+          } // loop over middle phi bins
+        } // loop over near phi bins
+      } // loop over far Z bins
+    } // loop over near Z bins
+  } // loop over middle Z bins
 
   return triplets;
 }
 
 template <typename spacepoint_t>
-bool Acts::SeedVertexFinder<spacepoint_t>::isTripletValid(
-    Acts::SeedVertexFinder<spacepoint_t>::Triplet& triplet) {
+bool Acts::SeedVertexFinder<spacepoint_t>::tripletValidationAndUpdate(
+    Acts::SeedVertexFinder<spacepoint_t>::Triplet& triplet) const {
   // slope for near+middle spacepoints
   Acts::ActsScalar alpha1 =
       std::atan2(triplet.a.y() - triplet.b.y(), triplet.a.x() - triplet.b.x());
@@ -386,9 +295,9 @@ bool Acts::SeedVertexFinder<spacepoint_t>::isTripletValid(
   Acts::ActsScalar alpha2 =
       std::atan2(triplet.b.y() - triplet.c.y(), triplet.b.x() - triplet.c.x());
   // these two slopes shouldn't be too different
-  Acts::ActsScalar delta_alpha =
+  Acts::ActsScalar deltaAlpha =
       detail::difference_periodic(alpha1, alpha2, 2 * M_PI);
-  if (std::abs(delta_alpha) > m_cfg.maxXYdeviation) {
+  if (std::abs(deltaAlpha) > m_cfg.maxXYdeviation) {
     return false;
   }
 
@@ -399,39 +308,36 @@ bool Acts::SeedVertexFinder<spacepoint_t>::isTripletValid(
   Acts::Vector3 bc{triplet.b.x() - triplet.c.x(), triplet.b.y() - triplet.c.y(),
                    triplet.b.z() - triplet.c.z()};
   // dot product of these two
-  Acts::ActsScalar costheta =
-      (ab.dot(bc)) / (std::sqrt(ab.dot(ab)) * std::sqrt(bc.dot(bc)));
-  Acts::ActsScalar theta = std::acos(costheta);
+  Acts::ActsScalar cosTheta =
+      (ab.dot(bc)) / (ab.norm() * bc.norm());
+  Acts::ActsScalar theta = std::acos(cosTheta);
   if (theta > m_cfg.maxXYZdeviation) {
     return false;
   }
 
   // reject the ray if it doesn't come close to the z-axis
   Acts::Ray3D ray = makeRayFromTriplet(triplet);
-  const Acts::Vector3& start_point = ray.origin();
+  const Acts::Vector3& startPoint = ray.origin();
   const Acts::Vector3& direction = ray.dir();
-
-  Acts::ActsScalar tanTheta =
-      std::sqrt(direction[0] * direction[0] + direction[1] * direction[1]) /
-      direction[2];
-  if (std::fabs(tanTheta) < std::tan(m_cfg.minTheta)) {
+  // norm to z-axis and to the ray
+  Acts::Vector3 norm{-1. * direction[1], 1. * direction[0], 0};
+  Acts::ActsScalar norm_size = norm.norm();
+  
+  Acts::ActsScalar tanTheta = norm_size / direction[2];
+  if (std::abs(tanTheta) < std::tan(m_cfg.minTheta)) {
     return false;
   }
 
-  // norm to z-axis and to the ray
-  Acts::Vector3 norm{-1. * direction[1], 1. * direction[0], 0};
   // nearest distance from the ray to z-axis
   Acts::ActsScalar dist =
-      std::fabs(start_point.dot(norm)) / std::sqrt(norm.dot(norm));
+      std::abs(startPoint.dot(norm)) / norm_size;
   if (dist > m_cfg.maxRPosition) {
     return false;
   }
 
-  // cross product of direction and norm
-  Acts::Vector3 direction_x_n = direction.cross(norm);
   // z coordinate of the nearest distance from the ray to z-axis
-  Acts::ActsScalar zdist = direction_x_n.dot(start_point) / (norm.dot(norm));
-  if (std::fabs(zdist) > m_cfg.maxZPosition) {
+  Acts::ActsScalar zDist = direction.cross(norm).dot(startPoint) / (norm_size*norm_size);
+  if (std::abs(zDist) > m_cfg.maxZPosition) {
     return false;
   }
 
@@ -446,14 +352,15 @@ bool Acts::SeedVertexFinder<spacepoint_t>::isTripletValid(
 template <typename spacepoint_t>
 std::pair<Acts::Vector3, Acts::ActsScalar>
 Acts::SeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
-    const Acts::SeedVertexFinder<spacepoint_t>::Triplet triplet) const {
+    const Acts::SeedVertexFinder<spacepoint_t>::Triplet& triplet) {
   Acts::Vector3 a{triplet.a.x(), triplet.a.y(), triplet.a.z()};
   Acts::Vector3 b{triplet.b.x(), triplet.b.y(), triplet.b.z()};
   Acts::Vector3 c{triplet.c.x(), triplet.c.y(), triplet.c.z()};
 
   Acts::Vector3 ba = b - a, ca = c - a;
 
-  Acts::Vector3 abg = ba.cross(ca).normalize();
+  // vector (alpha,beta,gamma) normalized to unity for convenience
+  Acts::Vector3 abg = ba.cross(ca).normalized();
   Acts::ActsScalar delta = -1. * abg.dot(a);
 
   // plane (alpha*x + beta*y + gamma*z + delta = 0), splitted to {{alpha, beta,
@@ -472,23 +379,23 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
   // nothing (will fill B[deriv]) solve A*(x_0,y_0,z_0) = B
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
-  Acts::Vector3 vtx_prev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
+  Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
 
   // (alpha-beta-gamma, delta), distance
   std::vector<
       std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>>
-      triplets_with_planes;
-  triplets_with_planes.reserve(triplets.size());
+      tripletsWithPlanes;
+  tripletsWithPlanes.reserve(triplets.size());
 
   for (const auto& triplet : triplets) {
     auto abgd = makePlaneFromTriplet(triplet);
-    triplets_with_planes.emplace_back(abgd, -1.);
+    tripletsWithPlanes.emplace_back(abgd, -1.);
   }
 
   // elements of the linear equations to solve
   Acts::SymMatrix3 A = Acts::SymMatrix3::Zero();
   Acts::Vector3 B = Acts::Vector3::Zero();
-  for (const auto& triplet : triplets_with_planes) {
+  for (const auto& triplet : tripletsWithPlanes) {
     const auto& abg = triplet.first.first;
     const auto& delta = triplet.first.second;
 
@@ -496,41 +403,40 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
     B -= 2. * delta * abg;
   }
 
-  for (int iter = 0; iter <= m_cfg.maxIterations; iter++) {
+  for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
     // new vertex position
     vtx = A.lu().solve(B);
 
-    Acts::Vector3 vtx_diff = vtx - vtx_prev;
+    Acts::Vector3 vtxDiff = vtx - vtxPrev;
 
-    if (std::sqrt(vtx_diff.dot(vtx_diff)) < m_cfg.minVtxShift) {
+    if (vtxDiff.norm() < m_cfg.minVtxShift) {
       // difference between the new vertex and the old vertex is not so large
       break;
     }
 
     if (iter != m_cfg.maxIterations) {
       // is not the last iteration
-      vtx_prev = vtx;
+      vtxPrev = vtx;
 
-      for (auto& triplet : triplets_with_planes) {
+      for (auto& triplet : tripletsWithPlanes) {
         const auto& abg = triplet.first.first;
         const auto& delta = triplet.first.second;
         Acts::ActsScalar distance = std::abs(abg.dot(vtx) + delta);
-
         triplet.second = distance;
       }
 
-      std::sort(triplets_with_planes.begin(), triplets_with_planes.end(),
+      std::sort(tripletsWithPlanes.begin(), tripletsWithPlanes.end(),
                 [](const auto& lhs, const auto& rhs) {
                   return lhs.second < rhs.second;
                 });
 
-      unsigned int threshold = (unsigned int)(triplets_with_planes.size() *
+      std::uint32_t threshold = (std::uint32_t)(tripletsWithPlanes.size() *
                                               (1. - m_cfg.removeFraction));
 
-      for (unsigned int tr = threshold + 1; tr < triplets_with_planes.size();
+      for (std::uint32_t tr = threshold + 1; tr < tripletsWithPlanes.size();
            ++tr) {
-        const auto& abg = triplets_with_planes[tr].first.first;
-        const auto& delta = triplets_with_planes[tr].first.second;
+        const auto& abg = tripletsWithPlanes[tr].first.first;
+        const auto& delta = tripletsWithPlanes[tr].first.second;
 
         // remove this triplet from A and B
         A -= 2. * (abg * abg.transpose());
@@ -538,7 +444,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
       }
 
       // remove all excesive triplets
-      triplets_with_planes.resize(threshold);
+      tripletsWithPlanes.resize(threshold);
     }
   }
 
@@ -547,7 +453,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
 
 template <typename spacepoint_t>
 Acts::Ray3D Acts::SeedVertexFinder<spacepoint_t>::makeRayFromTriplet(
-    const Acts::SeedVertexFinder<spacepoint_t>::Triplet triplet) const {
+    const Acts::SeedVertexFinder<spacepoint_t>::Triplet& triplet) {
   Acts::SymMatrix3 mat;
   mat.row(0) = Acts::Vector3(triplet.a.x(), triplet.a.y(), triplet.a.z());
   mat.row(1) = Acts::Vector3(triplet.b.x(), triplet.b.y(), triplet.b.z());
@@ -576,77 +482,73 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
   // (will fill B[]) solve A*(x_0,y_0,z_0) = B
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
-  Acts::Vector3 vtx_prev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
+  Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
 
-  // (start_point, direction), distance
+  // (startPoint, direction), distance
   std::vector<
       std::pair<std::pair<Acts::Vector3, Acts::Vector3>, Acts::ActsScalar>>
-      triplets_with_rays;
-  triplets_with_rays.reserve(triplets.size());
+      tripletsWithRays;
+  tripletsWithRays.reserve(triplets.size());
 
   for (const auto& triplet : triplets) {
-    triplets_with_rays.emplace_back(
+    tripletsWithRays.emplace_back(
         std::make_pair(triplet.ray.origin(), triplet.ray.dir()), -1.);
   }
 
   // elements of the linear equations to solve
   Acts::SymMatrix3 A = Acts::SymMatrix3::Identity() * 2. * triplets.size();
   Acts::Vector3 B = Acts::Vector3::Zero();
-  for (const auto& triplet : triplets_with_rays) {
+  for (const auto& triplet : tripletsWithRays) {
     // use ray saved from earlier
-    const auto& start_point = triplet.first.first;
+    const auto& startPoint = triplet.first.first;
     const auto& direction = triplet.first.second;
 
     A -= 2. * (direction * direction.transpose());
-    B += -2. * direction * (direction.dot(start_point)) + 2. * start_point;
+    B += -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
   }
 
-  for (int iter = 0; iter <= m_cfg.maxIterations; iter++) {
+  for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
     // new vertex position
     vtx = A.lu().solve(B);
 
-    Acts::Vector3 vtx_diff = vtx - vtx_prev;
+    Acts::Vector3 vtxDiff = vtx - vtxPrev;
 
-    if (std::sqrt(vtx_diff.dot(vtx_diff)) < m_cfg.minVtxShift) {
+    if (vtxDiff.norm() < m_cfg.minVtxShift) {
       // difference between the new vertex and the old vertex is not so large
       break;
     }
 
     if (iter != m_cfg.maxIterations) {
       // is not the last iteration
-      vtx_prev = vtx;
+      vtxPrev = vtx;
 
-      for (auto& triplet : triplets_with_rays) {
-        const auto& start_point = triplet.first.first;
+      for (auto& triplet : tripletsWithRays) {
+        const auto& startPoint = triplet.first.first;
         const auto& direction = triplet.first.second;
-
-        Acts::Vector3 vec_x_direction = (vtx - start_point).cross(direction);
-        Acts::ActsScalar distance =
-            std::sqrt(vec_x_direction.dot(vec_x_direction));
-
+        Acts::ActsScalar distance = (vtx - startPoint).cross(direction).norm();
         triplet.second = distance;
       }
 
-      std::sort(triplets_with_rays.begin(), triplets_with_rays.end(),
+      std::sort(tripletsWithRays.begin(), tripletsWithRays.end(),
                 [](const auto& lhs, const auto& rhs) {
                   return lhs.second < rhs.second;
                 });
 
-      unsigned int threshold = (unsigned int)(triplets_with_rays.size() *
+      std::uint32_t threshold = (std::uint32_t)(tripletsWithRays.size() *
                                               (1. - m_cfg.removeFraction));
 
-      for (unsigned int tr = threshold + 1; tr < triplets_with_rays.size();
+      for (std::uint32_t tr = threshold + 1; tr < tripletsWithRays.size();
            ++tr) {
-        const auto& start_point = triplets_with_rays[tr].first.first;
-        const auto& direction = triplets_with_rays[tr].first.second;
+        const auto& startPoint = tripletsWithRays[tr].first.first;
+        const auto& direction = tripletsWithRays[tr].first.second;
 
         // remove this triplet from A and B
         A += 2. * (direction * direction.transpose());
-        B -= -2. * direction * (direction.dot(start_point)) + 2. * start_point;
+        B -= -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
       }
 
       // remove all excesive triplets
-      triplets_with_rays.resize(threshold);
+      tripletsWithRays.resize(threshold);
     }
   }
 

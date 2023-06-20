@@ -62,9 +62,9 @@ ActsExamples::RootSeedVertexPerformanceWriter::RootSeedVertexPerformanceWriter(
     throw std::bad_alloc();
   } else {
     // I/O parameters
-    m_outputTree->Branch("diffx", &m_diffx);
-    m_outputTree->Branch("diffy", &m_diffy);
-    m_outputTree->Branch("diffz", &m_diffz);
+    m_outputTree->Branch("diffx", &m_diffX);
+    m_outputTree->Branch("diffy", &m_diffY);
+    m_outputTree->Branch("diffz", &m_diffZ);
 
     m_outputTree->Branch("recoX", &m_recoX);
     m_outputTree->Branch("recoY", &m_recoY);
@@ -177,9 +177,9 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
       // this is the truth vertex
       const auto& truePos = particle.position();
 
-      m_diffx.push_back(vtx.first[0] - truePos[0]);
-      m_diffy.push_back(vtx.first[1] - truePos[1]);
-      m_diffz.push_back(vtx.first[2] - truePos[2]);
+      m_diffX.push_back(vtx.first[0] - truePos[0]);
+      m_diffY.push_back(vtx.first[1] - truePos[1]);
+      m_diffZ.push_back(vtx.first[2] - truePos[2]);
 
       m_truthX.push_back(truePos[0]);
       m_truthY.push_back(truePos[1]);
@@ -206,9 +206,9 @@ ActsExamples::ProcessCode ActsExamples::RootSeedVertexPerformanceWriter::writeT(
   // fill the variables
   m_outputTree->Fill();
 
-  m_diffx.clear();
-  m_diffy.clear();
-  m_diffz.clear();
+  m_diffX.clear();
+  m_diffY.clear();
+  m_diffZ.clear();
   m_truthX.clear();
   m_truthY.clear();
   m_truthZ.clear();
