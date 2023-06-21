@@ -12,6 +12,7 @@
 #include "Acts/Definitions/Units.hpp"
 #include "Acts/Utilities/Logger.hpp"
 #include "Acts/Utilities/Ray.hpp"
+#include "Acts/Utilities/Result.hpp"
 #include "Acts/Utilities/detail/periodic.hpp"
 
 #include <algorithm>
@@ -97,7 +98,6 @@ class SeedVertexFinder {
   const Config& config() const { return m_cfg; }
 
   /// @brief Constructor
-  ///
   /// @param cfg Configuration object
   /// @param lgr Logging instance
   SeedVertexFinder(const Config& cfg,
@@ -110,7 +110,7 @@ class SeedVertexFinder {
   /// @brief Finds the vertex based on the provided spacepoints
   /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
   /// @return Position of the vertex
-  Acts::Vector3 findVertex(const std::vector<spacepoint_t>& spacepoints) const;
+  Acts::Result<Acts::Vector3> findVertex(const std::vector<spacepoint_t>& spacepoints) const;
 
  private:
   /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector. Also stores straight line fit through the spacepoints in case minimalizeWRT=="rays", so it's not fitted twice

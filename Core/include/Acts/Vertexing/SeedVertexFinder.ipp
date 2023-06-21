@@ -7,6 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <cmath>
+#include <system_error>
 
 #include <Eigen/Eigenvalues>
 
@@ -41,9 +42,9 @@ Acts::SeedVertexFinder<spacepoint_t>::SeedVertexFinder(
 }
 
 template <typename spacepoint_t>
-Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(
+Acts::Result<Acts::Vector3> Acts::SeedVertexFinder<spacepoint_t>::findVertex(
     const std::vector<spacepoint_t>& spacepoints) const {
-  // sort spacepoints to different phi and z bins
+  // sort spacepoints to different phi and z slices
   Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints sortedSpacepoints = sortSpacepoints(spacepoints);
 
   // find triplets
@@ -52,7 +53,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(
 
   // if no valid triplets found
   if (triplets.empty()) {
-    return {};
+    return Acts::Result<Acts::Vector3>::failure(std::make_error_code(std::errc::invalid_argument));
   }
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
@@ -68,7 +69,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findVertex(
                << ", allowed values are \"planes\" or \"rays\" ");
   }
 
-  return vtx;
+  return Acts::Result<Acts::Vector3>::success(vtx);
 }
 
 template <typename spacepoint_t>
@@ -135,11 +136,12 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
   Acts::Vector2 posR = Acts::Vector2(-m_cfg.maxZPosition, 0.) + vecA + vecB;
   Acts::ActsScalar R = vecA.norm() / std::sin(m_cfg.maxXYZdeviation);
   Acts::ActsScalar constB = -2. * posR[0];
-  Acts::ActsScalar constC =
-      posR[0] * posR[0] +
-      (posR[1] - m_cfg.rMaxNear) * (posR[1] - m_cfg.rMaxNear) - R * R;
-  Acts::ActsScalar maxZMiddle =
-      -1. * (-constB - sqrt(constB * constB - 4. * constC)) / 2.;
+  Acts::ActsScalar constC = posR[0] * posR[0] + (posR[1] - m_cfg.rMaxNear) * (posR[1] - m_cfg.rMaxNear) - R * R;
+  Acts::ActsScalar maxZMiddle = -1. * (-constB - sqrt(constB * constB - 4. * constC)) / 2.;
+  if(maxZMiddle<=0) {
+    ACTS_WARNING("maximum position of middle spacepoints is not positive, maxZMiddle = "<<maxZMiddle<<", check your config; setting maxZMiddle to "<<m_cfg.maxAbsZ);
+    maxZMiddle=m_cfg.maxAbsZ;
+  }
 
   // save some constant values for later
   Acts::ActsScalar rNearRatio[2] = {m_cfg.rMinNear / m_cfg.rMaxMiddle,
@@ -275,12 +277,12 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
                   } // loop over far spacepoints
                 } // loop over middle spacepoints
               } // loop over near spacepoints
-            } // loop over far phi bins
-          } // loop over middle phi bins
-        } // loop over near phi bins
-      } // loop over far Z bins
-    } // loop over near Z bins
-  } // loop over middle Z bins
+            } // loop over far phi slices
+          } // loop over middle phi slices
+        } // loop over near phi slices
+      } // loop over far Z slices
+    } // loop over near Z slices
+  } // loop over middle Z slices
 
   return triplets;
 }
@@ -363,7 +365,7 @@ Acts::SeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
   Acts::Vector3 abg = ba.cross(ca).normalized();
   Acts::ActsScalar delta = -1. * abg.dot(a);
 
-  // plane (alpha*x + beta*y + gamma*z + delta = 0), splitted to {{alpha, beta,
+  // plane (alpha*x + beta*y + gamma*z + delta = 0), split to {{alpha, beta,
   // gamma}, delta} for convenience
   return {abg, delta};
 }
@@ -372,11 +374,12 @@ template <typename spacepoint_t>
 Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
     const std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet>& triplets)
     const {
-  // define function f = sum over all triplets [distance from an unknown point
-  // (x_0,y_0,z_0) to the plane defined by the triplet] find minimum of "f" by
-  // partial derivations over x_0, y_0, and z_0 each derivation has parts
-  // lineary depending on x_0, y_0, and z_0 (will fill A[deriv][3]) or to
-  // nothing (will fill B[deriv]) solve A*(x_0,y_0,z_0) = B
+  // 1. define function f = sum over all triplets [distance from an unknown point
+  //    (x_0,y_0,z_0) to the plane defined by the triplet] 
+  // 2. find minimum of "f" by partial derivations over x_0, y_0, and z_0 
+  // 3. each derivation has parts linearly depending on x_0, y_0, and z_0 
+  //    (will fill A[deriv][3]) or to nothing (will fill B[deriv]) 
+  // 4. solve A*(x_0,y_0,z_0) = B
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
@@ -443,7 +446,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
         B += 2. * delta * abg;
       }
 
-      // remove all excesive triplets
+      // remove all excessive triplets
       tripletsWithPlanes.resize(threshold);
     }
   }
@@ -475,11 +478,12 @@ template <typename spacepoint_t>
 Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
     const std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet>& triplets)
     const {
-  // define function f = sum over all triplets [distance from an unknown point
-  // (x_0,y_0,z_0) to the ray defined by the triplet] find minimum of "f" by
-  // partial derivations over x_0, y_0, and z_0 each derivation has parts
-  // lineary depending on x_0, y_0, and z_0 (will fill A[][3]) or to nothing
-  // (will fill B[]) solve A*(x_0,y_0,z_0) = B
+  // 1. define function f = sum over all triplets [distance from an unknown point
+  //    (x_0,y_0,z_0) to the ray defined by the triplet] 
+  // 2. find minimum of "f" by partial derivations over x_0, y_0, and z_0 
+  // 3. each derivation has parts linearly depending on x_0, y_0, and z_0 
+  //    (will fill A[][3]) or to nothing (will fill B[]) 
+  // 4. solve A*(x_0,y_0,z_0) = B
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
@@ -547,7 +551,7 @@ Acts::Vector3 Acts::SeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
         B -= -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
       }
 
-      // remove all excesive triplets
+      // remove all excessive triplets
       tripletsWithRays.resize(threshold);
     }
   }

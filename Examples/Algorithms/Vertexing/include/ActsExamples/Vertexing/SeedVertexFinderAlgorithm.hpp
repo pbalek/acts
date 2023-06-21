@@ -11,6 +11,8 @@
 #include "ActsExamples/EventData/SimSpacePoint.hpp"
 #include "ActsExamples/Framework/DataHandle.hpp"
 #include "ActsExamples/Framework/IAlgorithm.hpp"
+#include "Acts/Vertexing/Vertex.hpp"
+#include "Acts/EventData/TrackParameters.hpp"
 
 #include <string>
 
@@ -43,6 +45,9 @@ class SeedVertexFinderAlgorithm final : public IAlgorithm {
                                                             "spacepoints"};
   WriteDataHandle<std::vector<std::pair<Acts::Vector3, double>>>
       m_outputSeedVertices{this, "fittedSeedVertices"};
+  
+  WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
+      m_outputVertices{this, "fittedVertices"};
 };
 
 }  // namespace ActsExamples

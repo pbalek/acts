@@ -42,15 +42,33 @@ ActsExamples::ProcessCode ActsExamples::SeedVertexFinderAlgorithm::execute(
   auto t1 = std::chrono::high_resolution_clock::now();
   auto vtx = SeedVertexFinder.findVertex(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
-  ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
-                                              << " ms");
-  ACTS_INFO("Found vertex at x = " << vtx[0] << "mm, y = " << vtx[1]
-                                   << "mm, z = " << vtx[2] << "mm");
+  if(vtx.ok()) {
+    ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
+                                                << " ms");
+    ACTS_INFO("Found vertex at x = " << vtx.value()[0] << "mm, y = " << vtx.value()[1]
+                                     << "mm, z = " << vtx.value()[2] << "mm");
+  
+    std::vector<std::pair<Acts::Vector3, double>> results;
+    results.push_back(std::make_pair(vtx.value(), (t2 - t1).count() / 1e6));
 
-  std::vector<std::pair<Acts::Vector3, double>> results;
-  results.push_back(std::make_pair(vtx, (t2 - t1).count() / 1e6));
+    m_outputSeedVertices(ctx, std::move(results));
 
-  m_outputSeedVertices(ctx, std::move(results));
+
+    // Vector to be filled with one single vertex
+    // std::vector<Acts::Vertex<InputTrack_t>> vertexCollection;
+    std::vector<Acts::Vertex<Acts::BoundTrackParameters>> vertexCollection;
+    // vtx.value() ... Acts::Vector3
+    // Add vertex to vertexCollection
+    vertexCollection.emplace_back(vtx.value());
+
+    // store found vertices
+    m_outputVertices(ctx, std::move(vertexCollection));
+  }
+  else
+  {
+    ACTS_INFO("Not found a vertex in the event after " << (t2 - t1).count() / 1e6
+                                                       << " ms");
+  }
 
   return ActsExamples::ProcessCode::SUCCESS;
 }
