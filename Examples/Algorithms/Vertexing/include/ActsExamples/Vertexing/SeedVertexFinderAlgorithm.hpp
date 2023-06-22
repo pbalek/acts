@@ -25,6 +25,7 @@ class SeedVertexFinderAlgorithm final : public IAlgorithm {
     std::string inputSpacepoints;
     /// Output vertex collection
     std::string outputVertices;
+    std::string outputSVertices;
   };
 
   SeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
@@ -46,8 +47,8 @@ class SeedVertexFinderAlgorithm final : public IAlgorithm {
   WriteDataHandle<std::vector<std::pair<Acts::Vector3, double>>>
       m_outputSeedVertices{this, "fittedSeedVertices"};
   
-  WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
-      m_outputVertices{this, "fittedVertices"};
+  // WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
+  //     m_outputSVertices{this, "fittedSVertices"};
 };
 
 }  // namespace ActsExamples

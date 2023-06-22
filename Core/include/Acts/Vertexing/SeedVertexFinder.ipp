@@ -123,6 +123,8 @@ template <typename spacepoint_t>
 std::vector<typename Acts::SeedVertexFinder<spacepoint_t>::Triplet>
 Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
     const Acts::SeedVertexFinder<spacepoint_t>::SortedSpacepoints& sortedSpacepoints) const {
+  
+  ACTS_INFO("where is FPE - A");
   std::vector<Acts::SeedVertexFinder<spacepoint_t>::Triplet> triplets;
 
   std::uint32_t phiStep =
@@ -142,7 +144,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
     ACTS_WARNING("maximum position of middle spacepoints is not positive, maxZMiddle = "<<maxZMiddle<<", check your config; setting maxZMiddle to "<<m_cfg.maxAbsZ);
     maxZMiddle=m_cfg.maxAbsZ;
   }
-
+  ACTS_INFO("where is FPE - B");
   // save some constant values for later
   Acts::ActsScalar rNearRatio[2] = {m_cfg.rMinNear / m_cfg.rMaxMiddle,
                                     m_cfg.rMaxNear / m_cfg.rMinMiddle};
@@ -161,7 +163,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
       (std::uint32_t)((-m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 0.01);
   std::uint32_t limitAbsZSliceTo =
       (std::uint32_t)((m_cfg.maxZPosition + m_cfg.maxAbsZ) / zBinLength + 1.01);
-
+  ACTS_INFO("where is FPE - C");
   for (std::uint32_t middleZ = limitMiddleSliceFrom; middleZ < limitMiddleSliceTo;
        ++middleZ) {
     // skip slices that are empty anyway
@@ -182,6 +184,8 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
           rMiddle[isLessFrom] / std::tan(angleZfrom) / zBinLength;
       nearZFrom = (std::uint32_t)std::max(new_deltaZfrom*rNearRatio[isLessFrom] + limitAbsZSliceFrom, 0.);
     }
+
+    ACTS_INFO("where is FPE - D "<<middleZ);
 
     bool isLessTo = (middleZ < limitAbsZSliceTo);
     Acts::ActsScalar deltaZto = (middleZ - limitAbsZSliceTo + 1) * zBinLength;
@@ -284,6 +288,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
     } // loop over near Z slices
   } // loop over middle Z slices
 
+  ACTS_INFO("where is FPE - Z");
   return triplets;
 }
 

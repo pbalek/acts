@@ -1559,11 +1559,13 @@ def addSeedVertexFinding(
     logLevel: Optional[acts.logging.Level] = None,
     inputSpacePoints: Optional[str] = "spacepoints",
     outputVertices: Optional[str] = "fittedSeedVertices",
+    outputSVertices: Optional[str] = "fittedSVertices",
 ) -> None:
 
     from acts.examples import (
         SeedVertexFinderAlgorithm,
         RootSeedVertexPerformanceWriter,
+        VertexPerformanceWriter,
     )
 
     customLogLevel = acts.examples.defaultLogging(s, logLevel)
@@ -1572,6 +1574,7 @@ def addSeedVertexFinding(
         level=customLogLevel(),
         inputSpacepoints=inputSpacePoints,
         outputVertices=outputVertices,
+        outputSVertices=outputSVertices,
     )
     s.addAlgorithm(findSeedVertex)
 
@@ -1595,5 +1598,20 @@ def addSeedVertexFinding(
                 treeName="seedvertexing",
             )
         )
+        # s.addWriter(
+        #     VertexPerformanceWriter(
+        #         level=customLogLevel(),
+        #         inputAllTruthParticles=inputParticles,
+        #         inputSelectedTruthParticles=selectedParticles,
+        #         inputMeasurementParticlesMap="measurement_particles_map",
+        #         inputTrajectories="trajectories",
+        #         # inputTrackParameters=trackParameters,
+        #         # inputAssociatedTruthParticles=associatedParticles,
+        #         inputVertices=outputSVertices,
+        #         minTrackVtxMatchFraction=0.0, #0.5 if associatedParticles else 0.0,
+        #         treeName="vertexing",
+        #         filePath=str(outputDirRoot / "performance_svertexing.root"),
+        #     )
+        # )
 
     return s
