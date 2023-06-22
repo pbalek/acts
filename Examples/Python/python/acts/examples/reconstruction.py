@@ -1559,7 +1559,7 @@ def addSeedVertexFinding(
     logLevel: Optional[acts.logging.Level] = None,
     inputSpacePoints: Optional[str] = "spacepoints",
     outputVertices: Optional[str] = "fittedSeedVertices",
-    outputSVertices: Optional[str] = "fittedSVertices",
+    # outputSVertices: Optional[str] = "fittedSVertices",
 ) -> None:
 
     from acts.examples import (
@@ -1574,7 +1574,7 @@ def addSeedVertexFinding(
         level=customLogLevel(),
         inputSpacepoints=inputSpacePoints,
         outputVertices=outputVertices,
-        outputSVertices=outputSVertices,
+        # outputSVertices=outputSVertices,
     )
     s.addAlgorithm(findSeedVertex)
 
