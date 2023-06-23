@@ -120,7 +120,7 @@ class SeedVertexFinder {
       : a(aa),
         b(bb),
         c(cc),
-        ray(Acts::Vector3::Zero(), Acts::Vector3::Zero()) {}
+        ray(Acts::Vector3::Zero(), {1.,1.,1.}) {}
 
     const spacepoint_t &a, &b, &c;
     Acts::Ray3D ray;

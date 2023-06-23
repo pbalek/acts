@@ -26,7 +26,7 @@ ActsExamples::SeedVertexFinderAlgorithm::SeedVertexFinderAlgorithm(
 
   m_inputSpacepoints.initialize(m_cfg.inputSpacepoints);
   m_outputSeedVertices.initialize(m_cfg.outputVertices);
-  // m_outputSVertices.initialize(m_cfg.outputSVertices);
+  m_outputSVertices.initialize(m_cfg.outputSVertices);
 }
 
 ActsExamples::ProcessCode ActsExamples::SeedVertexFinderAlgorithm::execute(
@@ -55,19 +55,19 @@ ActsExamples::ProcessCode ActsExamples::SeedVertexFinderAlgorithm::execute(
     m_outputSeedVertices(ctx, std::move(results));
 
 
-    // // Vector to be filled with one single vertex
-    // // std::vector<Acts::Vertex<InputTrack_t>> vertexCollection;
-    // std::vector<Acts::Vertex<Acts::BoundTrackParameters>> vertexCollection;
-    // // vtx.value() ... Acts::Vector3
-    // // Add vertex to vertexCollection
-    // vertexCollection.emplace_back(vtx.value());
+    // Vector to be filled with one single vertex
+    // std::vector<Acts::Vertex<InputTrack_t>> vertexCollection;
+    std::vector<Acts::Vertex<Acts::BoundTrackParameters>> vertexCollection;
+    // vtx.value() ... Acts::Vector3
+    // Add vertex to vertexCollection
+    vertexCollection.emplace_back(vtx.value());
 
-    // vertexCollection.at(0).setTracksAtVertex({});
-    // vertexCollection.at(0).setFitQuality(1.,1.);
-    // vertexCollection.at(0).setCovariance(Acts::SymMatrix3::Identity());
+    vertexCollection.at(0).setTracksAtVertex({});
+    vertexCollection.at(0).setFitQuality(1.,1.);
+    vertexCollection.at(0).setCovariance(Acts::SymMatrix3::Identity());
 
-    // // store found vertices
-    // m_outputSVertices(ctx, std::move(vertexCollection));
+    // store found vertices
+    m_outputSVertices(ctx, std::move(vertexCollection));
   }
   else
   {

@@ -159,7 +159,7 @@ addSeedVertexFinding(
     s,
     outputDirRoot=outputDir,
     outputVertices="fittedSeedVertices",
-    # outputSVertices="fittedSVertices",
+    outputSVertices="fittedSVertices",
 )
 
 s.run()

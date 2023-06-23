@@ -384,8 +384,7 @@ ActsExamples::ProcessCode ActsExamples::VertexPerformanceWriter::writeT(
     }
 
     // Match reco to truth vertex if at least 50% of tracks match
-    double trackVtxMatchFraction =
-        (double)fmap[maxOccurrenceId] / tracks.size();
+    double trackVtxMatchFraction = (tracks.size()>0 ? (double)fmap[maxOccurrenceId] / tracks.size() : 0.);
     if (trackVtxMatchFraction > m_cfg.minTrackVtxMatchFraction) {
       for (const auto& particle : associatedTruthParticles) {
         int priVtxId = particle.particleId().vertexPrimary();
