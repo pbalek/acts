@@ -52,9 +52,9 @@ Acts::Result<Acts::Vector3> Acts::SeedVertexFinder<spacepoint_t>::findVertex(
       findTriplets(sortedSpacepoints);
 
   // if no valid triplets found
-  if (triplets.empty()) {
-    return Acts::Result<Acts::Vector3>::failure(std::make_error_code(std::errc::invalid_argument));
-  }
+  // if (triplets.empty()) {
+  //   return Acts::Result<Acts::Vector3>::failure(std::make_error_code(std::errc::invalid_argument));
+  // }
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   if (m_cfg.minimalizeWRT == "planes") {
@@ -129,17 +129,21 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
 
   std::uint32_t phiStep =
       (std::uint32_t)(m_cfg.maxPhideviation / (2 * M_PI / m_cfg.numPhiSlices)) + 1;
+  ACTS_INFO("where is FPE - A1 "<<m_cfg.numPhiSlices<<" "<<(2 * M_PI / m_cfg.numPhiSlices));
 
   // calculate limits for middle spacepoints
   Acts::Vector2 vecA{-m_cfg.maxAbsZ + m_cfg.maxZPosition, m_cfg.rMinFar};
   vecA /= 2.;
   Acts::Vector2 vecB = {vecA[1], -vecA[0]};
   vecB /= std::tan(m_cfg.maxXYZdeviation);
+  ACTS_INFO("where is FPE - A2 "<<std::tan(m_cfg.maxXYZdeviation));
   Acts::Vector2 posR = Acts::Vector2(-m_cfg.maxZPosition, 0.) + vecA + vecB;
   Acts::ActsScalar R = vecA.norm() / std::sin(m_cfg.maxXYZdeviation);
+  ACTS_INFO("where is FPE - A3 "<<std::sin(m_cfg.maxXYZdeviation));
   Acts::ActsScalar constB = -2. * posR[0];
   Acts::ActsScalar constC = posR[0] * posR[0] + (posR[1] - m_cfg.rMaxNear) * (posR[1] - m_cfg.rMaxNear) - R * R;
   Acts::ActsScalar maxZMiddle = -1. * (-constB - sqrt(constB * constB - 4. * constC)) / 2.;
+  ACTS_INFO("where is FPE - A4 "<<constB * constB - 4. * constC<<" positive?");
   if(maxZMiddle<=0) {
     ACTS_WARNING("maximum position of middle spacepoints is not positive, maxZMiddle = "<<maxZMiddle<<", check your config; setting maxZMiddle to "<<m_cfg.maxAbsZ);
     maxZMiddle=m_cfg.maxAbsZ;
@@ -148,12 +152,14 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
   // save some constant values for later
   Acts::ActsScalar rNearRatio[2] = {m_cfg.rMinNear / m_cfg.rMaxMiddle,
                                     m_cfg.rMaxNear / m_cfg.rMinMiddle};
+  ACTS_INFO("where is FPE - B1 "<< m_cfg.rMaxMiddle<<" "<< m_cfg.rMinMiddle);
   Acts::ActsScalar rMiddle[2] = {m_cfg.rMaxMiddle, m_cfg.rMinMiddle};
   Acts::ActsScalar rFarDelta[2] = {
       m_cfg.rMaxFar - m_cfg.rMinMiddle,
       m_cfg.rMinFar - m_cfg.rMaxMiddle,
   };
   Acts::ActsScalar zBinLength = 2. * m_cfg.maxAbsZ / m_cfg.numZSlices;
+  ACTS_INFO("where is FPE - B2 "<< m_cfg.numZSlices<<" "<<zBinLength);
 
   // limits in terms of slice numbers
   std::uint32_t limitMiddleSliceFrom = (std::uint32_t)((-maxZMiddle + m_cfg.maxAbsZ) / zBinLength);
@@ -182,6 +188,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
     if (angleZfrom < M_PI) {
       Acts::ActsScalar new_deltaZfrom =
           rMiddle[isLessFrom] / std::tan(angleZfrom) / zBinLength;
+        ACTS_INFO("where is FPE - D1 "<<std::tan(angleZfrom));
       nearZFrom = (std::uint32_t)std::max(new_deltaZfrom*rNearRatio[isLessFrom] + limitAbsZSliceFrom, 0.);
     }
 
@@ -195,6 +202,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
     if (angleZto > 0) {
       Acts::ActsScalar new_deltaZto =
           rMiddle[!isLessTo] / std::tan(angleZto) / zBinLength;
+          ACTS_INFO("where is FPE - D2 "<<std::tan(angleZto));
       nearZTo = (std::uint32_t)std::max(new_deltaZto*rNearRatio[!isLessTo] + limitAbsZSliceTo, 0.);
       if (nearZTo > m_cfg.numZSlices) {
         nearZTo = m_cfg.numZSlices;
@@ -213,6 +221,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
       if (angle2Zfrom < M_PI) {
         farZFrom = (std::uint32_t)std::max((rFarDelta[isMiddleLess] / std::tan(angle2Zfrom) /
                           zBinLength) + middleZ, 0.);
+        if(std::abs(std::tan(angle2Zfrom))<1e-2) ACTS_INFO("where is FPE - D3 "<<std::tan(angle2Zfrom));
         if (farZFrom >= m_cfg.numZSlices) {
           continue;
         }
@@ -226,6 +235,7 @@ Acts::SeedVertexFinder<spacepoint_t>::findTriplets(
         farZTo =
             (std::uint32_t)std::max((rFarDelta[!isMiddleLess] / std::tan(angle2Zto) / zBinLength) +
             middleZ + 1, 0.);
+            if(std::abs(std::tan(angle2Zto))<1e-2) ACTS_INFO("where is FPE - D4 "<<std::tan(angle2Zto));
         if (farZTo > m_cfg.numZSlices) {
           farZTo = m_cfg.numZSlices;
         } else if (farZTo == 0) {
