@@ -115,14 +115,14 @@ class SingleSeedVertexFinder {
 
  private:
   /// @brief Struct to store spacepoint combinations from near, middle, and far parts of the detector. Also stores straight line fit through the spacepoints in case minimalizeWRT=="rays", so it's not fitted twice
-  struct Triplet {
+ /* struct Triplet {
     Triplet(const spacepoint_t& aa, const spacepoint_t& bb,
             const spacepoint_t& cc)
         : a(aa), b(bb), c(cc), ray(Acts::Vector3::Zero(), {1., 1., 1.}) {}
 
     const spacepoint_t &a, &b, &c;
     Acts::Ray3D ray;
-  };
+  };*/
 
   /// @brief Struct to store sorted spacepoints for each layer (near, middle, and far), for each slice of phi, and for each slice of z
   struct SortedSpacepoints {
@@ -174,7 +174,7 @@ class SingleSeedVertexFinder {
   /// @brief Makes triplets from the provided vectors of near, middle, and far spacepoints; for each slice of phi; and for each slice of z
   /// @param sortedSpacepoints Struct of the sorted spacepointss
   /// @return Vector of valid triplets
-  std::vector<Triplet> findTriplets(
+  std::vector<std::vector<Acts::ActsScalar>> findTriplets(
       const Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints&
           sortedSpacepoints) const;
 
@@ -183,30 +183,30 @@ class SingleSeedVertexFinder {
   /// @return True if the deviations and fitted ray are within the configured ranges
   ///         If "minimalizeWRT"=="rays", then the fitted ray is also saved to
   ///         the triplet for later
-  bool tripletValidationAndUpdate(Triplet& triplet) const;
+  std::vector<Acts::ActsScalar> tripletValidationAndFit(const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) const;
 
   /// @brief Calculates equation of the plane (alpha*x + beta*y + gamma*z + delta = 0), given the three points
   /// @param triplet A single triplet (with 3 spacepoints)
   /// @return A pair of {{alpha,beta,gamma},delta}
-  static std::pair<Acts::Vector3, Acts::ActsScalar> makePlaneFromTriplet(
-      const Triplet& triplet);
+  static std::vector<Acts::ActsScalar> makePlaneFromTriplet(
+      const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c);
 
   /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all planes defined by the triplets
   /// @param triplets Vector of all valid triplets
   /// @return Position {x,y,z} of the vertex
   Acts::Vector3 findClosestPointFromPlanes(
-      const std::vector<Triplet>& triplets) const;
+      std::vector<std::vector<Acts::ActsScalar>>& triplets) const;
 
   /// @brief Calculates parameters of the ray (starting point + direction), given the three points
   /// @param triplet A single triplet (with 3 spacepoints)
   /// @return A ray of {starting_point, direction}
-  static Acts::Ray3D makeRayFromTriplet(const Triplet& triplet);
+  static std::vector<Acts::ActsScalar> makeRayFromTriplet(const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c);
 
   /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all rays fitted through the triplets
   /// @param triplets Vector of all valid triplets
   /// @return Position {x,y,z} of the vertex
   Acts::Vector3 findClosestPointFromRays(
-      const std::vector<Triplet>& triplets) const;
+      std::vector<std::vector<Acts::ActsScalar>>& triplets) const;
 
   /// Logging instance
   std::unique_ptr<const Logger> m_logger;

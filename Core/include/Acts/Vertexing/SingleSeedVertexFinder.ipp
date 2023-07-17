@@ -49,8 +49,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints
       sortedSpacepoints = sortSpacepoints(spacepoints);
 
-  // find triplets
-  std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet> triplets =
+  // find triplets and fit them with plane or ray
+  std::vector<std::vector<Acts::ActsScalar>> triplets =
       findTriplets(sortedSpacepoints);
 
   // if no valid triplets found
@@ -125,11 +125,11 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::sortSpacepoints(
 }
 
 template <typename spacepoint_t>
-std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>
+std::vector<std::vector<Acts::ActsScalar>>
 Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
     const Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints&
         sortedSpacepoints) const {
-  std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet> triplets;
+  std::vector<std::vector<Acts::ActsScalar>> triplets;
 
   std::uint32_t phiStep =
       (std::uint32_t)(m_cfg.maxPhideviation / (2 * M_PI / m_cfg.numPhiSlices)) +
@@ -301,11 +301,11 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
                       continue;
                     }
 
-                    Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet tr(
+                    auto fittedTriplet = tripletValidationAndFit(
                         *nearSP.first, *middleSP.first, *farSP.first);
 
-                    if (tripletValidationAndUpdate(tr)) {
-                      triplets.push_back(tr);
+                    if (!fittedTriplet.empty()) {
+                      triplets.push_back(fittedTriplet);
                     }
                   }  // loop over far spacepoints
                 }    // loop over middle spacepoints
@@ -321,75 +321,77 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
 }
 
 template <typename spacepoint_t>
-bool Acts::SingleSeedVertexFinder<spacepoint_t>::tripletValidationAndUpdate(
-    Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet& triplet) const {
+std::vector<Acts::ActsScalar> Acts::SingleSeedVertexFinder<spacepoint_t>::tripletValidationAndFit(
+    const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) const {
   // slope for near+middle spacepoints
   Acts::ActsScalar alpha1 =
-      std::atan2(triplet.a.y() - triplet.b.y(), triplet.a.x() - triplet.b.x());
+      std::atan2(a.y() - b.y(), a.x() - b.x());
   // slope for middle+far spacepoints
   Acts::ActsScalar alpha2 =
-      std::atan2(triplet.b.y() - triplet.c.y(), triplet.b.x() - triplet.c.x());
+      std::atan2(b.y() - c.y(), b.x() - c.x());
   // these two slopes shouldn't be too different
   Acts::ActsScalar deltaAlpha =
       detail::difference_periodic(alpha1, alpha2, 2 * M_PI);
   if (std::abs(deltaAlpha) > m_cfg.maxXYdeviation) {
-    return false;
+    return {};
   }
 
   // near-middle ray
-  Acts::Vector3 ab{triplet.a.x() - triplet.b.x(), triplet.a.y() - triplet.b.y(),
-                   triplet.a.z() - triplet.b.z()};
+  Acts::Vector3 ab{a.x() - b.x(), a.y() - b.y(),
+                   a.z() - b.z()};
   // middle-far ray
-  Acts::Vector3 bc{triplet.b.x() - triplet.c.x(), triplet.b.y() - triplet.c.y(),
-                   triplet.b.z() - triplet.c.z()};
+  Acts::Vector3 bc{b.x() - c.x(), b.y() - c.y(),
+                   b.z() - c.z()};
   // dot product of these two
   Acts::ActsScalar cosTheta = (ab.dot(bc)) / (ab.norm() * bc.norm());
   Acts::ActsScalar theta = std::acos(cosTheta);
   if (theta > m_cfg.maxXYZdeviation) {
-    return false;
+    return {};
   }
 
   // reject the ray if it doesn't come close to the z-axis
-  Acts::Ray3D ray = makeRayFromTriplet(triplet);
-  const Acts::Vector3& startPoint = ray.origin();
-  const Acts::Vector3& direction = ray.dir();
+  auto ray = makeRayFromTriplet(a, b, c);
+  const Acts::Vector3 startPoint{ray[0], ray[1], ray[2]};
+  const Acts::Vector3 direction{ray[3], ray[4], ray[5]};
   // norm to z-axis and to the ray
   Acts::Vector3 norm{-1. * direction[1], 1. * direction[0], 0};
   Acts::ActsScalar norm_size = norm.norm();
 
   Acts::ActsScalar tanTheta = norm_size / direction[2];
   if (std::abs(tanTheta) < std::tan(m_cfg.minTheta)) {
-    return false;
+    return {};
   }
 
   // nearest distance from the ray to z-axis
   Acts::ActsScalar dist = std::abs(startPoint.dot(norm)) / norm_size;
   if (dist > m_cfg.maxRPosition) {
-    return false;
+    return {};
   }
 
   // z coordinate of the nearest distance from the ray to z-axis
   Acts::ActsScalar zDist =
       direction.cross(norm).dot(startPoint) / (norm_size * norm_size);
   if (std::abs(zDist) > m_cfg.maxZPosition) {
-    return false;
+    return {};
   }
 
-  if (m_cfg.minimalizeWRT == "rays") {
-    // save for later
-    triplet.ray = ray;
+  if (m_cfg.minimalizeWRT == "planes") {
+    return makePlaneFromTriplet(a,b,c);
+  }
+  else if (m_cfg.minimalizeWRT == "rays") {
+    return ray;
   }
 
-  return true;
+  return {};
 }
 
 template <typename spacepoint_t>
-std::pair<Acts::Vector3, Acts::ActsScalar>
+std::vector<Acts::ActsScalar>
 Acts::SingleSeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
-    const Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet& triplet) {
-  Acts::Vector3 a{triplet.a.x(), triplet.a.y(), triplet.a.z()};
-  Acts::Vector3 b{triplet.b.x(), triplet.b.y(), triplet.b.z()};
-  Acts::Vector3 c{triplet.c.x(), triplet.c.y(), triplet.c.z()};
+    const spacepoint_t& spA, const spacepoint_t& spB, const spacepoint_t& spC) {
+  Acts::Vector3 a{spA.x(), spA.y(), spA.z()};
+  Acts::Vector3 b{spB.x(), spB.y(), spB.z()};
+  Acts::Vector3 c{spC.x(), spC.y(), spC.z()};
 
   Acts::Vector3 ba = b - a, ca = c - a;
 
@@ -397,16 +399,15 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
   Acts::Vector3 abg = ba.cross(ca).normalized();
   Acts::ActsScalar delta = -1. * abg.dot(a);
 
-  // plane (alpha*x + beta*y + gamma*z + delta = 0), split to {{alpha, beta,
-  // gamma}, delta} for convenience
-  return {abg, delta};
+  // plane (alpha*x + beta*y + gamma*z + delta = 0)
+  // added "-1." for convenience, will be chi2 later
+  return {abg[0], abg[1], abg[2], delta, -1.0};
 }
 
 template <typename spacepoint_t>
 Acts::Vector3
 Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
-    const std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>&
-        triplets) const {
+    std::vector<std::vector<Acts::ActsScalar>>& tripletsWithPlanes) const {
   // 1. define function f = sum over all triplets [distance from an unknown
   // point
   //    (x_0,y_0,z_0) to the plane defined by the triplet]
@@ -418,23 +419,13 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
 
-  // (alpha-beta-gamma, delta), distance
-  std::vector<
-      std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>>
-      tripletsWithPlanes;
-  tripletsWithPlanes.reserve(triplets.size());
-
-  for (const auto& triplet : triplets) {
-    auto abgd = makePlaneFromTriplet(triplet);
-    tripletsWithPlanes.emplace_back(abgd, -1.);
-  }
 
   // elements of the linear equations to solve
   Acts::SymMatrix3 A = Acts::SymMatrix3::Zero();
   Acts::Vector3 B = Acts::Vector3::Zero();
   for (const auto& triplet : tripletsWithPlanes) {
-    const auto& abg = triplet.first.first;
-    const auto& delta = triplet.first.second;
+    const Acts::Vector3 abg{triplet[0], triplet[1], triplet[2]};
+    const Acts::ActsScalar delta = triplet[3];
 
     A += 2. * (abg * abg.transpose());
     B -= 2. * delta * abg;
@@ -456,15 +447,15 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
       vtxPrev = vtx;
 
       for (auto& triplet : tripletsWithPlanes) {
-        const auto& abg = triplet.first.first;
-        const auto& delta = triplet.first.second;
-        Acts::ActsScalar distance = std::abs(abg.dot(vtx) + delta);
-        triplet.second = distance;
+        const Acts::Vector3 abg{triplet[0], triplet[1], triplet[2]};
+        const Acts::ActsScalar delta{triplet[3]};
+        const Acts::ActsScalar distance = std::abs(abg.dot(vtx) + delta);
+        triplet[4] = distance;
       }
 
       std::sort(tripletsWithPlanes.begin(), tripletsWithPlanes.end(),
                 [](const auto& lhs, const auto& rhs) {
-                  return lhs.second < rhs.second;
+                  return lhs[4] < rhs[4];
                 });
 
       std::uint32_t threshold = (std::uint32_t)(tripletsWithPlanes.size() *
@@ -472,8 +463,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
 
       for (std::uint32_t tr = threshold + 1; tr < tripletsWithPlanes.size();
            ++tr) {
-        const auto& abg = tripletsWithPlanes[tr].first.first;
-        const auto& delta = tripletsWithPlanes[tr].first.second;
+        const Acts::Vector3 abg{tripletsWithPlanes[tr][0], tripletsWithPlanes[tr][1], tripletsWithPlanes[tr][2]};
+        const Acts::ActsScalar delta{tripletsWithPlanes[tr][3]};
 
         // remove this triplet from A and B
         A -= 2. * (abg * abg.transpose());
@@ -489,12 +480,12 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
 }
 
 template <typename spacepoint_t>
-Acts::Ray3D Acts::SingleSeedVertexFinder<spacepoint_t>::makeRayFromTriplet(
-    const Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet& triplet) {
+std::vector<Acts::ActsScalar> Acts::SingleSeedVertexFinder<spacepoint_t>::makeRayFromTriplet(
+    const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) {
   Acts::SymMatrix3 mat;
-  mat.row(0) = Acts::Vector3(triplet.a.x(), triplet.a.y(), triplet.a.z());
-  mat.row(1) = Acts::Vector3(triplet.b.x(), triplet.b.y(), triplet.b.z());
-  mat.row(2) = Acts::Vector3(triplet.c.x(), triplet.c.y(), triplet.c.z());
+  mat.row(0) = Acts::Vector3(a.x(), a.y(), a.z());
+  mat.row(1) = Acts::Vector3(b.x(), b.y(), b.z());
+  mat.row(2) = Acts::Vector3(c.x(), c.y(), c.z());
 
   Acts::Vector3 mean = mat.colwise().mean();
   Acts::SymMatrix3 cov = (mat.rowwise() - mean.transpose()).transpose() *
@@ -505,14 +496,15 @@ Acts::Ray3D Acts::SingleSeedVertexFinder<spacepoint_t>::makeRayFromTriplet(
   // eigenvalues are sorted in increasing order
   Acts::Vector3 eivec = saes.eigenvectors().col(2);
 
-  return {mean, eivec};
+  // added "-1." for convenience, will be chi2 later
+  return {mean[0], mean[1], mean[2], eivec[0], eivec[1], eivec[2], -1.};
 }
 
 template <typename spacepoint_t>
 Acts::Vector3
 Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
-    const std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>&
-        triplets) const {
+    std::vector<std::vector<Acts::ActsScalar>>&
+        tripletsWithRays) const {
   // 1. define function f = sum over all triplets [distance from an unknown
   // point
   //    (x_0,y_0,z_0) to the ray defined by the triplet]
@@ -524,24 +516,13 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
 
-  // (startPoint, direction), distance
-  std::vector<
-      std::pair<std::pair<Acts::Vector3, Acts::Vector3>, Acts::ActsScalar>>
-      tripletsWithRays;
-  tripletsWithRays.reserve(triplets.size());
-
-  for (const auto& triplet : triplets) {
-    tripletsWithRays.emplace_back(
-        std::make_pair(triplet.ray.origin(), triplet.ray.dir()), -1.);
-  }
-
   // elements of the linear equations to solve
-  Acts::SymMatrix3 A = Acts::SymMatrix3::Identity() * 2. * triplets.size();
+  Acts::SymMatrix3 A = Acts::SymMatrix3::Identity() * 2. * tripletsWithRays.size();
   Acts::Vector3 B = Acts::Vector3::Zero();
   for (const auto& triplet : tripletsWithRays) {
     // use ray saved from earlier
-    const auto& startPoint = triplet.first.first;
-    const auto& direction = triplet.first.second;
+    const Acts::Vector3 startPoint{triplet[0],triplet[1],triplet[2]};
+    const Acts::Vector3 direction{triplet[3],triplet[4],triplet[5]};
 
     A -= 2. * (direction * direction.transpose());
     B += -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
@@ -563,15 +544,15 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
       vtxPrev = vtx;
 
       for (auto& triplet : tripletsWithRays) {
-        const auto& startPoint = triplet.first.first;
-        const auto& direction = triplet.first.second;
-        Acts::ActsScalar distance = (vtx - startPoint).cross(direction).norm();
-        triplet.second = distance;
+        const Acts::Vector3 startPoint{triplet[0],triplet[1],triplet[2]};
+        const Acts::Vector3 direction{triplet[3],triplet[4],triplet[5]};
+        const Acts::ActsScalar distance = (vtx - startPoint).cross(direction).norm();
+        triplet[6] = distance;
       }
 
       std::sort(tripletsWithRays.begin(), tripletsWithRays.end(),
                 [](const auto& lhs, const auto& rhs) {
-                  return lhs.second < rhs.second;
+                  return lhs[6] < rhs[6];
                 });
 
       std::uint32_t threshold = (std::uint32_t)(tripletsWithRays.size() *
@@ -579,8 +560,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
 
       for (std::uint32_t tr = threshold + 1; tr < tripletsWithRays.size();
            ++tr) {
-        const auto& startPoint = tripletsWithRays[tr].first.first;
-        const auto& direction = tripletsWithRays[tr].first.second;
+        const Acts::Vector3 startPoint{tripletsWithRays[tr][0],tripletsWithRays[tr][1],tripletsWithRays[tr][2]};
+        const Acts::Vector3 direction{tripletsWithRays[tr][3],tripletsWithRays[tr][4],tripletsWithRays[tr][5]};
 
         // remove this triplet from A and B
         A -= Acts::SymMatrix3::Identity() * 2.;
