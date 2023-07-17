@@ -179,14 +179,14 @@ class SingleSeedVertexFinder {
           sortedSpacepoints) const;
 
   /// @brief Validate the triplet based on "maxXYdeviation", "maxXYZdeviation", "maxZPosition", and "maxRPosition"
-  /// @param triplet A single triplet to be validated
+  /// @param a,b,c Spacepoints to form a triplet to be validated
   /// @return True if the deviations and fitted ray are within the configured ranges
   ///         If "minimalizeWRT"=="rays", then the fitted ray is also saved to
   ///         the triplet for later
   std::vector<Acts::ActsScalar> tripletValidationAndFit(const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) const;
 
   /// @brief Calculates equation of the plane (alpha*x + beta*y + gamma*z + delta = 0), given the three points
-  /// @param triplet A single triplet (with 3 spacepoints)
+  /// @param a,b,c Spacepoints to form a triplet to be validated
   /// @return A pair of {{alpha,beta,gamma},delta}
   static std::vector<Acts::ActsScalar> makePlaneFromTriplet(
       const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c);
@@ -198,7 +198,7 @@ class SingleSeedVertexFinder {
       std::vector<std::vector<Acts::ActsScalar>>& triplets) const;
 
   /// @brief Calculates parameters of the ray (starting point + direction), given the three points
-  /// @param triplet A single triplet (with 3 spacepoints)
+  /// @param a,b,c Spacepoints to form a triplet to be validated
   /// @return A ray of {starting_point, direction}
   static std::vector<Acts::ActsScalar> makeRayFromTriplet(const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c);
 

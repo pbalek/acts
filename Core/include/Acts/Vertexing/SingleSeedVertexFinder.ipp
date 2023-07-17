@@ -45,6 +45,8 @@ template <typename spacepoint_t>
 Acts::Result<Acts::Vector3>
 Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     const std::vector<spacepoint_t>& spacepoints) const {
+  ACTS_INFO("Size of spacepoints = "<<spacepoints.size()*sizeof(spacepoints[0]));
+  
   // sort spacepoints to different phi and z slices
   Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints
       sortedSpacepoints = sortSpacepoints(spacepoints);
@@ -58,6 +60,10 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     return Acts::Result<Acts::Vector3>::failure(std::error_code());
   }
 
+  ACTS_INFO("size of 1 Triplet "<<sizeof(Triplet)<<", size of vector7 = "<<sizeof(std::vector<double>{0.,1.,2.,3.,4.,5.,6.})+sizeof(double)*7<<" size of Ray3D "<<sizeof(Acts::Ray3D));
+
+  ACTS_INFO("A-Size of triplets = "<<triplets.size()<<" that is "<<triplets.size()*sizeof(triplets.at(0))<<", ActsScalar "<<sizeof(Acts::ActsScalar));
+
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   if (m_cfg.minimalizeWRT == "planes") {
     // find a point closest to all planes defined by the triplets
@@ -70,6 +76,21 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
                << m_cfg.minimalizeWRT
                << ", allowed values are \"planes\" or \"rays\" ");
   }
+
+  ACTS_INFO("Size of sortedSpacepoints = "<<sizeof(sortedSpacepoints.sortedSP[0][0][0])*spacepoints.size());
+  ACTS_INFO("B-Size of triplets = "<<triplets.size()<<" that is "<<triplets.size()*sizeof(triplets.at(0))*sizeof(Acts::ActsScalar)<<", ActsScalar "<<sizeof(Acts::ActsScalar));
+
+  FILE* file = fopen("/proc/self/status", "r");
+  char line[128];
+  while (fgets(line, 128, file) != NULL){
+      if (strncmp(line, "VmSize:", 7) == 0){
+          ACTS_INFO("In the end of SingleSeedVertexFinder: VmSize="<<line);
+      }
+      if (strncmp(line, "VmRSS:", 6) == 0){
+        ACTS_INFO("In the end of SingleSeedVertexFinder: VmRSS="<<line);
+      }
+  }
+  fclose(file);
 
   return Acts::Result<Acts::Vector3>::success(vtx);
 }
@@ -420,6 +441,9 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
 
 
+    ACTS_INFO("A-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<tripletsWithPlanes.size());
+
+
   // elements of the linear equations to solve
   Acts::SymMatrix3 A = Acts::SymMatrix3::Zero();
   Acts::Vector3 B = Acts::Vector3::Zero();
@@ -475,6 +499,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
       tripletsWithPlanes.resize(threshold);
     }
   }
+
+  ACTS_INFO("B-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<tripletsWithPlanes.size());
 
   return vtx;
 }
