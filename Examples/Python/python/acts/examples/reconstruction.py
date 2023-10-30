@@ -1569,6 +1569,7 @@ def addSingleSeedVertexFinding(
 
     from acts.examples import (
         SingleSeedVertexFinderAlgorithm,
+        RootSingleSeedVertexPerformanceWriter,
         VertexPerformanceWriter,
     )
 
@@ -1588,17 +1589,28 @@ def addSingleSeedVertexFinding(
         outputDirRoot = Path(outputDirRoot)
         if not outputDirRoot.exists():
             outputDirRoot.mkdir()
-
+        
         s.addWriter(
-            VertexPerformanceWriter(
+            RootSingleSeedVertexPerformanceWriter(
                 level=customLogLevel(),
                 inputAllTruthParticles=inputParticles,
                 inputSelectedTruthParticles=selectedParticles,
-                useTracks=False,
                 inputVertices=outputVertices,
-                treeName="seedvertexing",
+                # inputTime=outputTime,
                 filePath=str(outputDirRoot / "performance_seedvertexing.root"),
+                treeName="seedvertexing",
             )
         )
+        # s.addWriter(
+        #     VertexPerformanceWriter(
+        #         level=customLogLevel(),
+        #         inputAllTruthParticles=inputParticles,
+        #         inputSelectedTruthParticles=selectedParticles,
+        #         useTracks=False,
+        #         inputVertices=outputVertices,
+        #         treeName="seedvertexing",
+        #         filePath=str(outputDirRoot / "performance_seedvertexing.root"),
+        #     )
+        # )
 
     return s

@@ -43,8 +43,11 @@ class SingleSeedVertexFinderAlgorithm final : public IAlgorithm {
 
   ReadDataHandle<SimSpacePointContainer> m_inputSpacepoints{this,
                                                             "spacepoints"};
-  WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
-      m_outputVertices{this, "fittedVertices"};
+  // WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
+  //     m_outputVertices{this, "fittedVertices"};
+
+  WriteDataHandle<std::vector<std::pair<Acts::Vector3, double>>>
+      m_outputSeedVertices{this, "fittedSeedVertices"};
 };
 
 }  // namespace ActsExamples
