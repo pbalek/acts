@@ -27,7 +27,7 @@ namespace ActsExamples {
 /// Additionally it matches the reco vertices to their truth vertices
 /// and write out the difference in x, y, and z position.
 class RootSingleSeedVertexPerformanceWriter final
-    : public WriterT<std::vector<std::pair<Acts::Vector3, double>>> {
+    : public WriterT<std::vector<std::vector<double>>> {
  public:
   struct Config {
     /// All input truth particle collection.
@@ -66,7 +66,7 @@ class RootSingleSeedVertexPerformanceWriter final
   /// @param [in] ctx is the algorithm context for event information
   ProcessCode writeT(
       const AlgorithmContext& ctx,
-      const std::vector<std::pair<Acts::Vector3, double>>& vertices) override;
+      const std::vector<std::vector<double>>& vertices) override;
 
  private:
   Config m_cfg;             ///< The config class

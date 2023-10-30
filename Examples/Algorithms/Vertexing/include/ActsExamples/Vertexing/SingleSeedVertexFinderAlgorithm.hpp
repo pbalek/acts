@@ -46,7 +46,7 @@ class SingleSeedVertexFinderAlgorithm final : public IAlgorithm {
   // WriteDataHandle<std::vector<Acts::Vertex<Acts::BoundTrackParameters>>>
   //     m_outputVertices{this, "fittedVertices"};
 
-  WriteDataHandle<std::vector<std::pair<Acts::Vector3, double>>>
+  WriteDataHandle<std::vector<std::vector<double>>>
       m_outputSeedVertices{this, "fittedSeedVertices"};
 };
 

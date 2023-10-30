@@ -116,7 +116,8 @@ class SingleSeedVertexFinder {
   /// @brief Finds the vertex based on the provided spacepoints
   /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
   /// @return Position of the vertex
-  Acts::Result<Acts::Vector3> findVertex(
+  // Acts::Result<Acts::Vector3> findVertex(
+  std::pair<Acts::Result<Acts::Vector3>, std::vector<std::vector<Acts::ActsScalar>>> findVertex(
       const std::vector<spacepoint_t>& spacepoints) const;
 
  private:
@@ -255,7 +256,7 @@ class SingleSeedVertexFinder {
   /// @param triplets Vector of all valid triplets
   /// @return Position {x,y,z} of the vertex
   Acts::Vector3 findClosestPoint(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples) const;
+    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples, std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const;
 
   /// @brief Square of effective eccentricity; it is set to the value of m_cfg.mixedEccentricity^2 for minimalizeWRT="mixed", and to the values of 0 and 1 for "rays" and "planes", respectively.
   Acts::ActsScalar m_effectEccSq;

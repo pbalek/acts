@@ -122,7 +122,7 @@ int ActsExamples::RootSingleSeedVertexPerformanceWriter::getNumberOfTruePriVerti
 
 ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::writeT(
     const AlgorithmContext& ctx,
-    const std::vector<std::pair<Acts::Vector3, double>>& vertices) {
+    const std::vector<std::vector<double>>& vertices) {
   // Exclusive access to the tree while writing
   std::lock_guard<std::mutex> lock(m_writeMutex);
 
@@ -165,7 +165,11 @@ ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::w
 
   // Loop over all reco vertices and find associated truth particles
   std::vector<SimParticleContainer> truthParticlesAtVtxContainer;
-  for (const auto& vtx : vertices) {
+
+  std::vector<std::vector<double>> verticesReal={vertices.at(0)};
+  std::vector<double> time=vertices.at(1);
+
+  for (const auto& vtx : verticesReal) {
     // find a particle with such truth vertex
 
     for (const auto& particle : allTruthParticles) {
@@ -177,19 +181,19 @@ ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::w
       // this is the truth vertex
       const auto& truePos = particle.position();
 
-      m_diffX.push_back(vtx.first[0] - truePos[0]);
-      m_diffY.push_back(vtx.first[1] - truePos[1]);
-      m_diffZ.push_back(vtx.first[2] - truePos[2]);
+      m_diffX.push_back(vtx[0] - truePos[0]);
+      m_diffY.push_back(vtx[1] - truePos[1]);
+      m_diffZ.push_back(vtx[2] - truePos[2]);
 
       m_truthX.push_back(truePos[0]);
       m_truthY.push_back(truePos[1]);
       m_truthZ.push_back(truePos[2]);
 
-      m_recoX.push_back(vtx.first[0]);
-      m_recoY.push_back(vtx.first[1]);
-      m_recoZ.push_back(vtx.first[2]);
+      m_recoX.push_back(vtx[0]);
+      m_recoY.push_back(vtx[1]);
+      m_recoZ.push_back(vtx[2]);
 
-      m_timeMS.push_back(vtx.second);
+      m_timeMS.push_back(time[0]);
 
       break;  // particle loop
     }

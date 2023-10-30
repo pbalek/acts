@@ -68,7 +68,7 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
   // fclose(file);
 
   auto t1 = std::chrono::high_resolution_clock::now();
-  auto vtx = SingleSeedVertexFinder.findVertex(inputSpacepoints);
+  auto [vtx, rejectVector] = SingleSeedVertexFinder.findVertex(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
   // file = fopen("/proc/self/status", "r");
   // while (fgets(line, 128, file) != NULL){
@@ -81,6 +81,8 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
   // }
   // fclose(file);
 
+  ACTS_INFO("rejectVector "<<rejectVector.size());
+
   if (vtx.ok()) {
     ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
                                                 << " ms");
@@ -91,8 +93,16 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
     // std::vector<Acts::Vertex<Acts::BoundTrackParameters>> vertexCollection;
     // vertexCollection.emplace_back(vtx.value());
 
-    std::vector<std::pair<Acts::Vector3, double>> results;
-    results.push_back(std::make_pair(vtx.value(), (t2 - t1).count() / 1e6));
+    // std::vector<std::pair<Acts::Vector3, double>> results;
+    // results.push_back(std::make_pair(vtx.value(), (t2 - t1).count() / 1e6));
+
+    std::vector<std::vector<double>> results;
+    results.push_back({vtx.value()[0], vtx.value()[1], vtx.value()[2]});
+    results.push_back({(t2 - t1).count() / 1e6});
+    for(auto trip : rejectVector)
+    {
+      results.push_back(trip);
+    }
 
     m_outputSeedVertices(ctx, std::move(results));
 
@@ -107,7 +117,8 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
     // vertexCollection.emplace_back(vtx_dummy.value());
     // m_outputVertices(ctx, std::move(vertexCollection));
 
-    std::vector<std::pair<Acts::Vector3, double>> results{{{0.,0.,0.},-1}};
+    // std::vector<std::pair<Acts::Vector3, double>> results{{{0.,0.,0.},-1}};
+    std::vector<std::vector<double>> results{{0.,0.,0.},{-1}};
 
     m_outputSeedVertices(ctx, std::move(results));
   }

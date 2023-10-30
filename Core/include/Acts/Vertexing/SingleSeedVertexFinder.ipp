@@ -55,7 +55,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::SingleSeedVertexFinder(
 }
 
 template <typename spacepoint_t>
-Acts::Result<Acts::Vector3>
+std::pair<Acts::Result<Acts::Vector3>, std::vector<std::vector<Acts::ActsScalar>>>
 Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     const std::vector<spacepoint_t>& spacepoints) const {
   ACTS_INFO("Size of spacepoints = "<<spacepoints.size()*sizeof(spacepoints[0]));
@@ -71,8 +71,10 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   // if no valid triplets found
   if (triplets.empty()) {
     ACTS_INFO("triplets are empty");
-    return Acts::Result<Acts::Vector3>::failure(std::error_code());
+    return {Acts::Result<Acts::Vector3>::failure(std::error_code()), {}};
   }
+
+  std::vector<std::vector<Acts::ActsScalar>> rejectVector;
 
   // ACTS_INFO("size of 1 Triplet "<<sizeof(Triplet)<<", size of vector7 = "<<sizeof(std::vector<double>{0.,1.,2.,3.,4.,5.,6.})+sizeof(double)*7<<" size of Ray3D "<<sizeof(Acts::Ray3D));
 
@@ -82,7 +84,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
 
   if (m_cfg.minimalizeWRT == "planes" || m_cfg.minimalizeWRT == "rays" || m_cfg.minimalizeWRT == "mixed") {
     // find a point closest to all rays fitted through the triplets
-    vtx = findClosestPoint(triplets);
+    vtx = findClosestPoint(triplets,rejectVector);
 
     ACTS_INFO("Found mixed vertex at x = " << vtx[0]
                                      << "mm, y = " << vtx[1]
@@ -109,7 +111,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   // }
   // fclose(file);
 
-  return Acts::Result<Acts::Vector3>::success(vtx);
+  return {Acts::Result<Acts::Vector3>::success(vtx), rejectVector};
 }
 
 template <typename spacepoint_t>
@@ -506,7 +508,8 @@ std::pair<Acts::Vector3, Acts::Vector3> Acts::SingleSeedVertexFinder<spacepoint_
 template <typename spacepoint_t>
 Acts::Vector3
 Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples) const {
+    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples,
+    std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const {
   // 1. define function f = sum over all triplets [distance from an unknown
   // point
   //    (x_0,y_0,z_0) to the plane defined by the triplet]
@@ -517,7 +520,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
-
+  rejectVector.clear();
 
   // ACTS_INFO("A-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<allTriples.size());
 
@@ -577,6 +580,10 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
         const Acts::ActsScalar& delta = allTriples[tr].getPlaneDelta();
         const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
         const Acts::Vector3& direction  = allTriples[tr].getDirection();
+
+        rejectVector.push_back({iter*1.,abg[0],abg[1],abg[2],delta,
+                                startPoint[0],startPoint[1],startPoint[2],
+                                direction[0],direction[1],direction[2]});
 
         // remove this triplet from A and B
         A -= m_effectEccSq * 2. * (abg * abg.transpose()) + (1-m_effectEccSq) * (Acts::SymMatrix3::Identity() * 2. -  2. * (direction * direction.transpose()));
@@ -653,6 +660,18 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
 
 
     }
+  }
+
+  for (std::uint32_t tr = 0; tr < allTriples.size();++tr)
+  {
+    const Acts::Vector3& abg = allTriples[tr].getPlaneABG();
+    const Acts::ActsScalar& delta = allTriples[tr].getPlaneDelta();
+    const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
+    const Acts::Vector3& direction  = allTriples[tr].getDirection();
+
+    rejectVector.push_back({-99.,abg[0],abg[1],abg[2],delta,
+                            startPoint[0],startPoint[1],startPoint[2],
+                            direction[0],direction[1],direction[2]});
   }
 
   ACTS_INFO("B-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; allTriples pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<allTriples.size());
