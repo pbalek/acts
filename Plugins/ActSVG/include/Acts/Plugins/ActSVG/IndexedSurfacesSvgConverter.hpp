@@ -19,9 +19,9 @@
 #include "Acts/Plugins/ActSVG/SurfaceSvgConverter.hpp"
 #include "Acts/Plugins/ActSVG/SvgUtils.hpp"
 #include "Acts/Utilities/Enumerate.hpp"
-#include "Acts/Utilities/Logger.hpp"
 #include "Acts/Utilities/detail/Grid.hpp"
-#include "actsvg/meta.hpp"
+#include <actsvg/core.hpp>
+#include <actsvg/meta.hpp>
 
 #include <tuple>
 #include <vector>
@@ -69,7 +69,6 @@ namespace IndexedSurfacesConverter {
 struct Options {
   /// Hierarchy map of styles
   GeometryHierarchyMap<Style> surfaceStyles;
-
   /// The Grid converter options
   GridConverter::Options gridOptions;
 };
@@ -102,9 +101,9 @@ ProtoIndexedSurfaceGrid convertImpl(const GeometryContext& gctx,
   // - for 1D phi
   // - for 2D z-phi or phi-z
   bool estimateR =
-      (index_grid::grid_type::DIM == 1 and indexGrid.casts[0u] == binPhi) or
-      (index_grid::grid_type::DIM == 2 and
-       (indexGrid.casts[0u] == binPhi or indexGrid.casts[1u] == binPhi));
+      (index_grid::grid_type::DIM == 1 && indexGrid.casts[0u] == binPhi) ||
+      (index_grid::grid_type::DIM == 2 &&
+       (indexGrid.casts[0u] == binPhi || indexGrid.casts[1u] == binPhi));
 
   for (auto [is, s] : enumerate(surfaces)) {
     // Create the surface converter options
@@ -197,8 +196,10 @@ void convert(const GeometryContext& gctx, const surface_container& surfaces,
   using GridType =
       typename instance_type::template grid_type<std::vector<std::size_t>>;
   // Defining a Delegate type
-  using DelegateType = Experimental::IndexedSurfacesAllPortalsImpl<GridType>;
+  using DelegateType = Experimental::IndexedSurfacesAllPortalsImpl<
+      GridType, Experimental::IndexedSurfacesImpl>;
   using SubDelegateType = Experimental::IndexedSurfacesImpl<GridType>;
+
   // Get the instance
   const auto* instance = delegate.instance();
   auto castedDelegate = dynamic_cast<const DelegateType*>(instance);

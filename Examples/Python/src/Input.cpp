@@ -17,7 +17,8 @@
 #include "ActsExamples/Io/Root/RootAthenaNTupleReader.hpp"
 #include "ActsExamples/Io/Root/RootMaterialTrackReader.hpp"
 #include "ActsExamples/Io/Root/RootParticleReader.hpp"
-#include "ActsExamples/Io/Root/RootTrajectorySummaryReader.hpp"
+#include "ActsExamples/Io/Root/RootSimHitReader.hpp"
+#include "ActsExamples/Io/Root/RootTrackSummaryReader.hpp"
 
 #include <memory>
 
@@ -44,20 +45,19 @@ void addInput(Context& ctx) {
                              fileList, orderedEvents,
                              readCachedSurfaceInformation);
 
-  ACTS_PYTHON_DECLARE_READER(ActsExamples::RootTrajectorySummaryReader, mex,
-                             "RootTrajectorySummaryReader", outputTracks,
-                             outputParticles, treeName, filePath,
-                             orderedEvents);
+  ACTS_PYTHON_DECLARE_READER(
+      ActsExamples::RootTrackSummaryReader, mex, "RootTrackSummaryReader",
+      outputTracks, outputParticles, treeName, filePath, orderedEvents);
 
   // CSV READERS
   ACTS_PYTHON_DECLARE_READER(ActsExamples::CsvParticleReader, mex,
                              "CsvParticleReader", inputDir, inputStem,
                              outputParticles);
 
-  ACTS_PYTHON_DECLARE_READER(ActsExamples::CsvMeasurementReader, mex,
-                             "CsvMeasurementReader", inputDir,
-                             outputMeasurements, outputMeasurementSimHitsMap,
-                             outputSourceLinks, outputClusters);
+  ACTS_PYTHON_DECLARE_READER(
+      ActsExamples::CsvMeasurementReader, mex, "CsvMeasurementReader", inputDir,
+      outputMeasurements, outputMeasurementSimHitsMap, outputSourceLinks,
+      outputClusters, outputMeasurementParticlesMap, inputSimHits);
 
   ACTS_PYTHON_DECLARE_READER(ActsExamples::CsvPlanarClusterReader, mex,
                              "CsvPlanarClusterReader", inputDir, outputClusters,
@@ -81,5 +81,9 @@ void addInput(Context& ctx) {
                              inputFilePath, outputTrackParameters,
                              outputTruthVtxParameters, outputRecoVtxParameters,
                              outputBeamspotConstraint);
+
+  ACTS_PYTHON_DECLARE_READER(ActsExamples::RootSimHitReader, mex,
+                             "RootSimHitReader", treeName, filePath,
+                             simHitCollection);
 }
 }  // namespace Acts::Python

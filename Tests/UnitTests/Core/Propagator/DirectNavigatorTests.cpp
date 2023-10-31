@@ -106,7 +106,8 @@ void runTest(const rpropagator_t& rprop, const dpropagator_t& dprop, double pT,
   // Define start parameters from ranom input
   double p = pT / sin(theta);
   CurvilinearTrackParameters start(Vector4(0, 0, 0, time), phi, theta,
-                                   dcharge / p);
+                                   dcharge / p, std::nullopt,
+                                   ParticleHypothesis::pion());
 
   using EndOfWorld = EndOfWorldReached;
 
@@ -135,7 +136,7 @@ void runTest(const rpropagator_t& rprop, const dpropagator_t& dprop, double pT,
   std::cout << " - the standard navigator yielded "
             << cSurfaces.collected.size() << " collected surfaces" << std::endl;
 
-  if (not referenceTiming) {
+  if (!referenceTiming) {
     // Create the surface sequence
     std::vector<const Surface*> surfaceSequence;
     surfaceSequence.reserve(cSurfaces.collected.size());

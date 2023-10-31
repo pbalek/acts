@@ -57,7 +57,7 @@ ActsExamples::CsvPlanarClusterReader::CsvPlanarClusterReader(
   if (m_cfg.outputSimHits.empty()) {
     throw std::invalid_argument("Missing simulated hits output collection");
   }
-  if (not m_cfg.trackingGeometry) {
+  if (!m_cfg.trackingGeometry) {
     throw std::invalid_argument("Missing tracking geometry");
   }
 
@@ -137,11 +137,11 @@ std::vector<ActsExamples::HitData> readHitsByGeometryId(
   return hits;
 }
 
-std::vector<ActsExamples::CellData> readCellsByHitId(
+std::vector<ActsExamples::CellDataLegacy> readCellsByHitId(
     const std::string& inputDir, size_t event) {
   // timestamp is an optional element
-  auto cells = readEverything<ActsExamples::CellData>(inputDir, "cells.csv",
-                                                      {"timestamp"}, event);
+  auto cells = readEverything<ActsExamples::CellDataLegacy>(
+      inputDir, "cells.csv", {"timestamp"}, event);
   // sort for fast hit id look up
   std::sort(cells.begin(), cells.end(), CompareHitId{});
   return cells;
@@ -258,14 +258,14 @@ ActsExamples::ProcessCode ActsExamples::CsvPlanarClusterReader::read(
     Acts::Vector3 mom(1, 1, 1);  // fake momentum
     Acts::Vector2 local(0, 0);
     auto lpResult = surface->globalToLocal(ctx.geoContext, pos, mom);
-    if (not lpResult.ok()) {
+    if (!lpResult.ok()) {
       ACTS_FATAL("Global to local transformation did not succeed.");
       return ProcessCode::ABORT;
     }
     local = lpResult.value();
 
     // TODO what to use as cluster uncertainty?
-    Acts::ActsSymMatrix<3> cov = Acts::ActsSymMatrix<3>::Identity();
+    Acts::ActsSquareMatrix<3> cov = Acts::ActsSquareMatrix<3>::Identity();
     // create the planar cluster
     Acts::SourceLink sourceLink{
         Acts::DigitizationSourceLink(geoId, std::move(simHitIndices))};

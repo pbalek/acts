@@ -56,12 +56,11 @@ Acts::PlaneSurface::PlaneSurface(const Vector3& center, const Vector3& normal)
   m_transform.pretranslate(center);
 }
 
-Acts::PlaneSurface::PlaneSurface(
-    const std::shared_ptr<const PlanarBounds>& pbounds,
-    const Acts::DetectorElementBase& detelement)
-    : Surface(detelement), m_bounds(pbounds) {
+Acts::PlaneSurface::PlaneSurface(std::shared_ptr<const PlanarBounds> pbounds,
+                                 const Acts::DetectorElementBase& detelement)
+    : Surface(detelement), m_bounds(std::move(pbounds)) {
   /// surfaces representing a detector element must have bounds
-  throw_assert(pbounds, "PlaneBounds must not be nullptr");
+  throw_assert(m_bounds, "PlaneBounds must not be nullptr");
 }
 
 Acts::PlaneSurface::PlaneSurface(const Transform3& transform,
@@ -128,7 +127,7 @@ Acts::Polyhedron Acts::PlaneSurface::polyhedronRepresentation(
     if (isEllipse) {
       exactPolyhedron = false;
       auto vStore = bounds().values();
-      innerExists = vStore[EllipseBounds::eInnerRx] > s_epsilon and
+      innerExists = vStore[EllipseBounds::eInnerRx] > s_epsilon &&
                     vStore[EllipseBounds::eInnerRy] > s_epsilon;
       coversFull =
           std::abs(vStore[EllipseBounds::eHalfPhiSector] - M_PI) < s_epsilon;
@@ -136,7 +135,7 @@ Acts::Polyhedron Acts::PlaneSurface::polyhedronRepresentation(
     // All of those can be described as convex
     // @todo same as for Discs: coversFull is not the right criterium
     // for triangulation
-    if (not isEllipse or not innerExists or not coversFull) {
+    if (!isEllipse || !innerExists || !coversFull) {
       auto facesMesh = detail::FacesHelper::convexFaceMesh(vertices);
       faces = facesMesh.first;
       triangularMesh = facesMesh.second;
@@ -174,7 +173,7 @@ double Acts::PlaneSurface::pathCorrection(const GeometryContext& gctx,
   return 1. / std::abs(Surface::normal(gctx, position).dot(direction));
 }
 
-Acts::SurfaceIntersection Acts::PlaneSurface::intersect(
+Acts::SurfaceMultiIntersection Acts::PlaneSurface::intersect(
     const GeometryContext& gctx, const Vector3& position,
     const Vector3& direction, const BoundaryCheck& bcheck,
     ActsScalar tolerance) const {
@@ -183,18 +182,22 @@ Acts::SurfaceIntersection Acts::PlaneSurface::intersect(
   // Use the intersection helper for planar surfaces
   auto intersection =
       PlanarHelper::intersect(gctxTransform, position, direction, tolerance);
+  auto status = intersection.status();
   // Evaluate boundary check if requested (and reachable)
-  if (intersection.status != Intersection3D::Status::unreachable and bcheck) {
+  if (intersection.status() != Intersection3D::Status::unreachable && bcheck) {
     // Built-in local to global for speed reasons
     const auto& tMatrix = gctxTransform.matrix();
     // Create the reference vector in local
-    const Vector3 vecLocal(intersection.position - tMatrix.block<3, 1>(0, 3));
-    if (not insideBounds(tMatrix.block<3, 2>(0, 0).transpose() * vecLocal,
-                         bcheck)) {
-      intersection.status = Intersection3D::Status::missed;
+    const Vector3 vecLocal(intersection.position() - tMatrix.block<3, 1>(0, 3));
+    if (!insideBounds(tMatrix.block<3, 2>(0, 0).transpose() * vecLocal,
+                      bcheck)) {
+      status = Intersection3D::Status::missed;
     }
   }
-  return {intersection, this};
+  return {{Intersection3D(intersection.position(), intersection.pathLength(),
+                          status),
+           Intersection3D::invalid()},
+          this};
 }
 
 Acts::ActsMatrix<2, 3> Acts::PlaneSurface::localCartesianToBoundLocalDerivative(

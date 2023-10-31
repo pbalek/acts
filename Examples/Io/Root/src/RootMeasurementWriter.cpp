@@ -11,6 +11,7 @@
 #include "Acts/Geometry/TrackingGeometry.hpp"
 #include "ActsExamples/EventData/AverageSimHits.hpp"
 #include "ActsExamples/EventData/Index.hpp"
+#include "ActsExamples/EventData/IndexSourceLink.hpp"
 #include "ActsExamples/Framework/AlgorithmContext.hpp"
 #include "ActsExamples/Utilities/Range.hpp"
 
@@ -44,7 +45,7 @@ ActsExamples::RootMeasurementWriter::RootMeasurementWriter(
   m_inputMeasurementSimHitsMap.initialize(m_cfg.inputMeasurementSimHitsMap);
   m_inputClusters.maybeInitialize(m_cfg.inputClusters);
 
-  if (not m_cfg.trackingGeometry) {
+  if (!m_cfg.trackingGeometry) {
     throw std::invalid_argument("Missing tracking geometry");
   }
   // Setup ROOT File
@@ -59,7 +60,7 @@ ActsExamples::RootMeasurementWriter::RootMeasurementWriter(
   std::vector<
       std::pair<Acts::GeometryIdentifier, std::unique_ptr<DigitizationTree>>>
       dTrees;
-  if (not m_cfg.boundIndices.empty()) {
+  if (!m_cfg.boundIndices.empty()) {
     ACTS_DEBUG("Bound indices are declared, preparing trees.");
     for (size_t ikv = 0; ikv < m_cfg.boundIndices.size(); ++ikv) {
       auto geoID = m_cfg.boundIndices.idAt(ikv);
@@ -69,7 +70,7 @@ ActsExamples::RootMeasurementWriter::RootMeasurementWriter(
         ACTS_VERBOSE("- setup branch for index: " << bIndex);
         dTree->setupBoundRecBranch(bIndex);
       }
-      if (not m_cfg.inputClusters.empty()) {
+      if (!m_cfg.inputClusters.empty()) {
         dTree->setupClusterBranch(bIndices);
       }
       dTrees.push_back({geoID, std::move(dTree)});
@@ -106,7 +107,7 @@ ActsExamples::ProcessCode ActsExamples::RootMeasurementWriter::writeT(
   const auto& hitSimHitsMap = m_inputMeasurementSimHitsMap(ctx);
 
   ClusterContainer clusters;
-  if (not m_cfg.inputClusters.empty()) {
+  if (!m_cfg.inputClusters.empty()) {
     clusters = m_inputClusters(ctx);
   }
 
@@ -118,11 +119,12 @@ ActsExamples::ProcessCode ActsExamples::RootMeasurementWriter::writeT(
 
     std::visit(
         [&](const auto& m) {
-          Acts::GeometryIdentifier geoId = m.sourceLink().geometryId();
+          Acts::GeometryIdentifier geoId =
+              m.sourceLink().template get<IndexSourceLink>().geometryId();
           // find the corresponding surface
           const Acts::Surface* surfacePtr =
               m_cfg.trackingGeometry->findSurface(geoId);
-          if (not surfacePtr) {
+          if (!surfacePtr) {
             return;
           }
           const Acts::Surface& surface = *surfacePtr;
@@ -139,11 +141,18 @@ ActsExamples::ProcessCode ActsExamples::RootMeasurementWriter::writeT(
           // Find the contributing simulated hits
           auto indices = makeRange(hitSimHitsMap.equal_range(hitIdx));
           // Use average truth in the case of multiple contributing sim hits
-          auto [local, pos4, dir] =
-              averageSimHits(ctx.geoContext, surface, simHits, indices);
-          dTree->fillTruthParameters(local, pos4, dir);
+          auto [local, pos4, dir] = averageSimHits(ctx.geoContext, surface,
+                                                   simHits, indices, logger());
+          Acts::RotationMatrix3 rot =
+              surface
+                  .referenceFrame(ctx.geoContext, pos4.segment<3>(Acts::ePos0),
+                                  dir)
+                  .inverse();
+          std::pair<double, double> angles =
+              Acts::VectorHelpers::incidentAngles(dir, rot);
+          dTree->fillTruthParameters(local, pos4, dir, angles);
           dTree->fillBoundMeasurement(m);
-          if (not clusters.empty()) {
+          if (!clusters.empty()) {
             const auto& c = clusters[hitIdx];
             dTree->fillCluster(c);
           }

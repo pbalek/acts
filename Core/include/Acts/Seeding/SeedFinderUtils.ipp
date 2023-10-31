@@ -92,7 +92,7 @@ inline void transformCoordinates(Acts::SpacePointData& spacePointData,
                                  callable_t&& extractFunction) {
   auto [xM, yM, zM, rM, varianceRM, varianceZM] = extractFunction(spM);
 
-  // resize + operator[] is faster then reserve and push_back
+  // resize + operator[] is faster than reserve and push_back
   linCircleVec.resize(vec.size());
 
   float cosPhiM = xM / rM;
@@ -156,7 +156,7 @@ inline bool xyzCoordinateCheck(
   // check the compatibility of SPs coordinates in xyz assuming the
   // Bottom-Middle direction with the strip measurement details
   bool hasValueStored = spacePointData.hasDynamicVariable();
-  if (not hasValueStored) {
+  if (!hasValueStored) {
     return false;
   }
 
@@ -169,12 +169,12 @@ inline bool xyzCoordinateCheck(
   const Acts::Vector3& stripCenterDistance =
       spacePointData.getStripCenterDistance(index);
 
-  const double& xTopStripVector = topStripVector[0];
-  const double& yTopStripVector = topStripVector[1];
-  const double& zTopStripVector = topStripVector[2];
-  const double& xBottomStripVector = bottomStripVector[0];
-  const double& yBottomStripVector = bottomStripVector[1];
-  const double& zBottomStripVector = bottomStripVector[2];
+  const double xTopStripVector = topStripVector[0];
+  const double yTopStripVector = topStripVector[1];
+  const double zTopStripVector = topStripVector[2];
+  const double xBottomStripVector = bottomStripVector[0];
+  const double yBottomStripVector = bottomStripVector[1];
+  const double zBottomStripVector = bottomStripVector[2];
 
   // cross product between top strip vector and spacepointPosition
   double d1[3] = {yTopStripVector * spacepointPosition[2] -

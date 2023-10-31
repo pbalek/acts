@@ -15,12 +15,12 @@ std::unique_ptr<Acts::SpacePointGrid<SpacePoint>>
 Acts::SpacePointGridCreator::createGrid(
     const Acts::SpacePointGridConfig& config,
     const Acts::SpacePointGridOptions& options) {
-  if (not config.isInInternalUnits) {
+  if (!config.isInInternalUnits) {
     throw std::runtime_error(
         "SpacePointGridConfig not in ACTS internal units in "
         "SpacePointGridCreator::createGrid");
   }
-  if (not options.isInInternalUnits) {
+  if (!options.isInInternalUnits) {
     throw std::runtime_error(
         "SpacePointGridOptions not in ACTS internal units in "
         "SpacePointGridCreator::createGrid");
@@ -94,6 +94,11 @@ Acts::SpacePointGridCreator::createGrid(
     // consecutive phi bins in the seed making step.
     // Each individual bin should be approximately a fraction (depending on this
     // number) of the maximum expected azimutal deflection.
+
+    // set protection for large number of bins, by default it is large
+    if (phiBins > config.maxPhiBins) {
+      phiBins = config.maxPhiBins;
+    }
   }
 
   Acts::detail::Axis<detail::AxisType::Equidistant,

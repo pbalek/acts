@@ -12,6 +12,7 @@
 #include "Acts/Navigation/NavigationState.hpp"
 #include "Acts/Surfaces/Surface.hpp"
 #include "Acts/Utilities/Delegate.hpp"
+#include "Acts/Utilities/ThrowAssert.hpp"
 
 #include <cstddef>
 #include <stdexcept>
@@ -24,7 +25,9 @@ class DetectorVolume;
 }  // namespace Acts
 
 Acts::Experimental::Portal::Portal(std::shared_ptr<Surface> surface)
-    : m_surface(std::move(surface)) {}
+    : m_surface(std::move(surface)) {
+  throw_assert(m_surface, "Portal surface is nullptr");
+}
 
 std::shared_ptr<Acts::Experimental::Portal>
 Acts::Experimental::Portal::makeShared(std::shared_ptr<Surface> surface) {
@@ -68,17 +71,17 @@ void Acts::Experimental::Portal::fuse(std::shared_ptr<Portal>& other) {
   Direction bDir = Direction::Backward;
 
   // Determine this directioon
-  Direction tDir = (not m_volumeUpdators[bDir.index()].connected())
+  Direction tDir = (!m_volumeUpdators[bDir.index()].connected())
                        ? Direction::Forward
                        : Direction::Backward;
 
-  if (not m_volumeUpdators[tDir.index()].connected()) {
+  if (!m_volumeUpdators[tDir.index()].connected()) {
     throw std::invalid_argument(
         "Portal: trying to fuse portal (keep) with no links.");
   }
   // And now check other direction
   Direction oDir = tDir.invert();
-  if (not other->m_volumeUpdators[oDir.index()].connected()) {
+  if (!other->m_volumeUpdators[oDir.index()].connected()) {
     throw std::runtime_error(
         "Portal: trying to fuse portal (waste) with no links.");
   }
@@ -91,27 +94,26 @@ void Acts::Experimental::Portal::fuse(std::shared_ptr<Portal>& other) {
 }
 
 void Acts::Experimental::Portal::assignDetectorVolumeUpdator(
-    Direction dir, DetectorVolumeUpdator&& dVolumeUpdator,
-    const std::vector<std::shared_ptr<DetectorVolume>>& attachedVolumes) {
+    Direction dir, DetectorVolumeUpdator dVolumeUpdator,
+    std::vector<std::shared_ptr<DetectorVolume>> attachedVolumes) {
   auto idx = dir.index();
   m_volumeUpdators[idx] = std::move(dVolumeUpdator);
-  m_attachedVolumes[idx] = attachedVolumes;
+  m_attachedVolumes[idx] = std::move(attachedVolumes);
 }
 
 void Acts::Experimental::Portal::assignDetectorVolumeUpdator(
-    DetectorVolumeUpdator&& dVolumeUpdator,
-    const std::vector<std::shared_ptr<DetectorVolume>>& attachedVolumes) {
+    DetectorVolumeUpdator dVolumeUpdator,
+    std::vector<std::shared_ptr<DetectorVolume>> attachedVolumes) {
   // Check and throw exceptions
-  if (not m_volumeUpdators[0u].connected() and
-      not m_volumeUpdators[1u].connected()) {
+  if (!m_volumeUpdators[0u].connected() && !m_volumeUpdators[1u].connected()) {
     throw std::runtime_error("Portal: portal has no link on either side.");
   }
-  if (m_volumeUpdators[0u].connected() and m_volumeUpdators[1u].connected()) {
+  if (m_volumeUpdators[0u].connected() && m_volumeUpdators[1u].connected()) {
     throw std::runtime_error("Portal: portal already has links on both sides.");
   }
   size_t idx = m_volumeUpdators[0u].connected() ? 1u : 0u;
   m_volumeUpdators[idx] = std::move(dVolumeUpdator);
-  m_attachedVolumes[idx] = attachedVolumes;
+  m_attachedVolumes[idx] = std::move(attachedVolumes);
 }
 
 void Acts::Experimental::Portal::updateDetectorVolume(

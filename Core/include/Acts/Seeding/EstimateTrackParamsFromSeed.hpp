@@ -255,7 +255,7 @@ std::optional<BoundVector> estimateTrackParamsFromSeed(
   // Transform the bottom space point to local coordinates of the provided
   // surface
   auto lpResult = surface.globalToLocal(gctx, spGlobalPositions[0], direction);
-  if (not lpResult.ok()) {
+  if (!lpResult.ok()) {
     ACTS_ERROR(
         "Global to local transformation did not succeed. Please make sure the "
         "bottom space point lies on the provided surface.");
@@ -286,7 +286,7 @@ std::optional<BoundVector> estimateTrackParamsFromSeed(
   ActsScalar pathz = spGlobalPositions[0].dot(bField) / bField.norm();
   // The estimated time (use path length along magnetic field only if it's not
   // zero)
-  if (pathz != 0) {
+  if (pathz != 0 && vz != 0) {
     params[eBoundTime] = pathz / vz;
   } else {
     params[eBoundTime] = spGlobalPositions[0].norm() / v;

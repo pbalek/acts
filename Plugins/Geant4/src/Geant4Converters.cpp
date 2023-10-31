@@ -98,8 +98,16 @@ Acts::Geant4ShapeConverter::cylinderBounds(const G4Tubs& g4Tubs) {
   tArray[B::eHalfLengthZ] = static_cast<ActsScalar>(g4Tubs.GetZHalfLength());
   tArray[B::eHalfPhiSector] =
       0.5 * static_cast<ActsScalar>(g4Tubs.GetDeltaPhiAngle());
-  tArray[B::eAveragePhi] = static_cast<ActsScalar>(g4Tubs.GetStartPhiAngle());
-
+  // Geant fiddles around with user given values, i.e. it would not
+  // allow [-M_PI, +M_PI) as a full segment (has to be [0, 2PI)])
+  if (std::abs(tArray[B::eHalfPhiSector] - M_PI) <
+      std::numeric_limits<ActsScalar>::epsilon()) {
+    tArray[B::eAveragePhi] = 0.;
+  } else {
+    tArray[B::eAveragePhi] =
+        static_cast<ActsScalar>(g4Tubs.GetStartPhiAngle()) +
+        tArray[B::eHalfPhiSector];
+  }
   ActsScalar thickness = g4Tubs.GetOuterRadius() - g4Tubs.GetInnerRadius();
   auto cBounds = std::make_shared<CylinderBounds>(tArray);
   return std::make_tuple(std::move(cBounds), thickness);
@@ -114,8 +122,16 @@ Acts::Geant4ShapeConverter::radialBounds(const G4Tubs& g4Tubs) {
   tArray[B::eMaxR] = static_cast<ActsScalar>(g4Tubs.GetOuterRadius());
   tArray[B::eHalfPhiSector] =
       0.5 * static_cast<ActsScalar>(g4Tubs.GetDeltaPhiAngle());
-  tArray[B::eAveragePhi] = static_cast<ActsScalar>(g4Tubs.GetStartPhiAngle());
-
+  // Geant fiddles around with user given values, i.e. it would not
+  // allow [-M_PI, +M_PI) as a full segment (has to be [0, 2PI)])
+  if (std::abs(tArray[B::eHalfPhiSector] - M_PI) <
+      std::numeric_limits<ActsScalar>::epsilon()) {
+    tArray[B::eAveragePhi] = 0.;
+  } else {
+    tArray[B::eAveragePhi] =
+        static_cast<ActsScalar>(g4Tubs.GetStartPhiAngle()) +
+        tArray[B::eHalfPhiSector];
+  }
   ActsScalar thickness = g4Tubs.GetZHalfLength() * 2;
   auto rBounds = std::make_shared<RadialBounds>(tArray);
   return std::make_tuple(std::move(rBounds), thickness);
@@ -267,7 +283,7 @@ std::shared_ptr<Acts::Surface> Acts::Geant4PhysicalVolumeConverter::surface(
   auto assignMaterial = [&](Acts::Surface& sf, ActsScalar moriginal,
                             ActsScalar mcompressed) -> void {
     auto g4Material = g4LogVol->GetMaterial();
-    if (convertMaterial and g4Material != nullptr) {
+    if (convertMaterial && g4Material != nullptr) {
       if (compressed < 0.) {
         mcompressed = moriginal;
       }
@@ -283,7 +299,7 @@ std::shared_ptr<Acts::Surface> Acts::Geant4PhysicalVolumeConverter::surface(
   // Into a rectangle
   auto g4Box = dynamic_cast<const G4Box*>(g4Solid);
   if (g4Box != nullptr) {
-    if (forcedType == Surface::SurfaceType::Other or
+    if (forcedType == Surface::SurfaceType::Other ||
         forcedType == Surface::SurfaceType::Plane) {
       auto [bounds, axes, original] =
           Geant4ShapeConverter{}.rectangleBounds(*g4Box);
@@ -300,7 +316,7 @@ std::shared_ptr<Acts::Surface> Acts::Geant4PhysicalVolumeConverter::surface(
   // Into a Trapezoid
   auto g4Trd = dynamic_cast<const G4Trd*>(g4Solid);
   if (g4Trd != nullptr) {
-    if (forcedType == Surface::SurfaceType::Other or
+    if (forcedType == Surface::SurfaceType::Other ||
         forcedType == Surface::SurfaceType::Plane) {
       auto [bounds, axes, original] =
           Geant4ShapeConverter{}.trapezoidBounds(*g4Trd);
@@ -321,13 +337,13 @@ std::shared_ptr<Acts::Surface> Acts::Geant4PhysicalVolumeConverter::surface(
     ActsScalar diffZ = 2 * g4Tubs->GetZHalfLength();
     // Detect if cylinder or disc case
     ActsScalar original = 0.;
-    if (forcedType == Surface::SurfaceType::Cylinder or
-        (diffR < diffZ and forcedType == Surface::SurfaceType::Other)) {
+    if (forcedType == Surface::SurfaceType::Cylinder ||
+        (diffR < diffZ && forcedType == Surface::SurfaceType::Other)) {
       auto [bounds, originalT] = Geant4ShapeConverter{}.cylinderBounds(*g4Tubs);
       original = originalT;
       surface = Acts::Surface::makeShared<CylinderSurface>(toGlobal,
                                                            std::move(bounds));
-    } else if (forcedType == Surface::SurfaceType::Disc or
+    } else if (forcedType == Surface::SurfaceType::Disc ||
                forcedType == Surface::SurfaceType::Other) {
       auto [bounds, originalT] = Geant4ShapeConverter{}.radialBounds(*g4Tubs);
       original = originalT;

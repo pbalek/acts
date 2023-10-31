@@ -28,27 +28,33 @@ using namespace Acts;
 namespace Acts::Python {
 
 void addVertexing(Context& ctx) {
+  using Seeder = ActsExamples::AdaptiveMultiVertexFinderAlgorithm::SeedFinder;
   auto mex = ctx.get("examples");
+  auto& m = ctx.get("main");
+
+  py::enum_<Seeder>(m, "VertexSeedFinder")
+      .value("GaussianSeeder", Seeder::GaussianSeeder)
+      .value("AdaptiveGridSeeder", Seeder::AdaptiveGridSeeder);
 
   ACTS_PYTHON_DECLARE_ALGORITHM(
       ActsExamples::AdaptiveMultiVertexFinderAlgorithm, mex,
       "AdaptiveMultiVertexFinderAlgorithm", inputTrackParameters,
-      inputTrajectories, outputProtoVertices, outputVertices, bField);
+      outputProtoVertices, outputVertices, seedFinder, bField);
 
   ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::IterativeVertexFinderAlgorithm,
                                 mex, "IterativeVertexFinderAlgorithm",
-                                inputTrackParameters, inputTrajectories,
-                                outputProtoVertices, outputVertices, bField);
+                                inputTrackParameters, outputProtoVertices,
+                                outputVertices, bField);
 
   ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::TutorialVertexFinderAlgorithm,
                                 mex, "TutorialVertexFinderAlgorithm",
-                                inputTrackParameters, inputTrajectories,
-                                outputProtoVertices, bField);
+                                inputTrackParameters, outputProtoVertices,
+                                bField);
 
-  ACTS_PYTHON_DECLARE_ALGORITHM(
-      ActsExamples::VertexFitterAlgorithm, mex, "VertexFitterAlgorithm",
-      inputTrackParameters, inputTrajectories, inputProtoVertices,
-      outputVertices, bField, doConstrainedFit, constraintPos, constraintCov);
+  ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::VertexFitterAlgorithm, mex,
+                                "VertexFitterAlgorithm", inputTrackParameters,
+                                inputProtoVertices, outputVertices, bField,
+                                doConstrainedFit, constraintPos, constraintCov);
 
   ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::SingleSeedVertexFinderAlgorithm,
                                 mex, "SingleSeedVertexFinderAlgorithm",

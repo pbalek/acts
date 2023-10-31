@@ -57,10 +57,10 @@ ActsExamples::DigitizationAlgorithm::DigitizationAlgorithm(
     throw std::invalid_argument(
         "Missing hit-to-simulated-hits map output collection");
   }
-  if (not m_cfg.trackingGeometry) {
+  if (!m_cfg.trackingGeometry) {
     throw std::invalid_argument("Missing tracking geometry");
   }
-  if (not m_cfg.randomNumbers) {
+  if (!m_cfg.randomNumbers) {
     throw std::invalid_argument("Missing random numbers tool");
   }
 
@@ -150,6 +150,9 @@ ActsExamples::ProcessCode ActsExamples::DigitizationAlgorithm::execute(
   // Setup random number generator
   auto rng = m_cfg.randomNumbers->spawnGenerator(ctx);
 
+  // Some statistics
+  std::size_t skippedHits = 0;
+
   ACTS_DEBUG("Starting loop over modules ...");
   for (const auto& simHitsGroup : groupByModule(simHits)) {
     // Manual pair unpacking instead of using
@@ -192,8 +195,13 @@ ActsExamples::ProcessCode ActsExamples::DigitizationAlgorithm::execute(
 
             DigitizedParameters dParameters;
 
+            if (simHit.depositedEnergy() < m_cfg.minEnergyDeposit) {
+              ACTS_VERBOSE("Skip hit because energy deposit to small")
+              continue;
+            }
+
             // Geometric part - 0, 1, 2 local parameters are possible
-            if (not digitizer.geometric.indices.empty()) {
+            if (!digitizer.geometric.indices.empty()) {
               ACTS_VERBOSE("Configured to geometric digitize "
                            << digitizer.geometric.indices.size()
                            << " parameters.");
@@ -210,15 +218,16 @@ ActsExamples::ProcessCode ActsExamples::DigitizationAlgorithm::execute(
             }
 
             // Smearing part - (optionally) rest
-            if (not digitizer.smearing.indices.empty()) {
+            if (!digitizer.smearing.indices.empty()) {
               ACTS_VERBOSE("Configured to smear "
                            << digitizer.smearing.indices.size()
                            << " parameters.");
               auto res =
                   digitizer.smearing(rng, simHit, *surfacePtr, ctx.geoContext);
-              if (not res.ok()) {
-                ACTS_WARNING("Problem in hit smearing, skip hit ("
-                             << res.error().message() << ")");
+              if (!res.ok()) {
+                ++skippedHits;
+                ACTS_DEBUG("Problem in hit smearing, skip hit ("
+                           << res.error().message() << ")");
                 continue;
               }
               const auto& [par, cov] = res.value();
@@ -269,6 +278,12 @@ ActsExamples::ProcessCode ActsExamples::DigitizationAlgorithm::execute(
         *digitizerItr);
   }
 
+  if (skippedHits > 0) {
+    ACTS_WARNING(
+        skippedHits
+        << " skipped in Digitization. Enable DEBUG mode to see more details.");
+  }
+
   m_sourceLinkWriteHandle(ctx, std::move(sourceLinks));
   m_measurementWriteHandle(ctx, std::move(measurements));
   m_clusterWriteHandle(ctx, std::move(clusters));
@@ -286,7 +301,7 @@ ActsExamples::DigitizationAlgorithm::channelizing(
 
   auto driftedSegment =
       m_surfaceDrift.toReadout(gctx, surface, geoCfg.thickness, hit.position(),
-                               hit.unitDirection(), driftDir);
+                               hit.direction(), driftDir);
   auto maskedSegmentRes = m_surfaceMask.apply(surface, driftedSegment);
   if (maskedSegmentRes.ok()) {
     auto maskedSegment = maskedSegmentRes.value();
@@ -317,7 +332,7 @@ ActsExamples::DigitizationAlgorithm::localParameters(
     auto bin = ch.bin;
     Acts::ActsScalar charge =
         geoCfg.digital ? 1. : geoCfg.charge(ch.activation, rng);
-    if (geoCfg.digital or charge > geoCfg.threshold) {
+    if (geoCfg.digital || charge > geoCfg.threshold) {
       totalWeight += charge;
       size_t b0 = bin[0];
       size_t b1 = bin[1];

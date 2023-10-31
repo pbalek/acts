@@ -71,7 +71,7 @@ ActsExamples::SeedingAlgorithm::SeedingAlgorithm(
 
   m_outputSeeds.initialize(m_cfg.outputSeeds);
 
-  if (m_cfg.gridConfig.rMax != m_cfg.seedFinderConfig.rMax and
+  if (m_cfg.gridConfig.rMax != m_cfg.seedFinderConfig.rMax &&
       m_cfg.allowSeparateRMax == false) {
     throw std::invalid_argument(
         "Inconsistent config rMax: using different values in gridConfig and "
@@ -229,8 +229,9 @@ ActsExamples::ProcessCode ActsExamples::SeedingAlgorithm::execute(
   spacePointPtrs.reserve(nSpacePoints);
   for (const auto& isp : m_inputSpacePoints) {
     for (const auto& spacePoint : (*isp)(ctx)) {
-      // since the event store owns the space points, their pointers should be
-      // stable and we do not need to create local copies.
+      // since the event store owns the space
+      // points, their pointers should be stable and
+      // we do not need to create local copies.
       spacePointPtrs.push_back(&spacePoint);
     }
   }

@@ -84,7 +84,7 @@ ActsExamples::HoughTransformSeeder::HoughTransformSeeder(
   m_inputSourceLinks.initialize(m_cfg.inputSourceLinks);
   m_inputMeasurements.initialize(m_cfg.inputMeasurements);
 
-  if (not m_cfg.trackingGeometry) {
+  if (!m_cfg.trackingGeometry) {
     throw std::invalid_argument(
         "HoughTransformSeeder: Missing tracking geometry");
   }
@@ -95,7 +95,7 @@ ActsExamples::HoughTransformSeeder::HoughTransformSeeder(
   }
   // ensure geometry selection contains only valid inputs
   for (const auto& geoId : m_cfg.geometrySelection) {
-    if ((geoId.approach() != 0u) or (geoId.boundary() != 0u) or
+    if ((geoId.approach() != 0u) || (geoId.boundary() != 0u) ||
         (geoId.sensitive() != 0u)) {
       throw std::invalid_argument(
           "HoughTransformSeeder: Invalid geometry selection: only volume and "
@@ -519,7 +519,7 @@ void ActsExamples::HoughTransformSeeder::addMeasurements(
       }
 
       for (auto& sourceLink : moduleSourceLinks) {
-        // extract a local position/covariance independent from the concrecte
+        // extract a local position/covariance independent of the concrete
         // measurement content. since we do not know if and where the local
         // parameters are contained in the measurement parameters vector, they
         // are transformed to the bound space where we do know their location.
@@ -529,12 +529,12 @@ void ActsExamples::HoughTransformSeeder::addMeasurements(
             [](const auto& meas) {
               auto expander = meas.expander();
               Acts::BoundVector par = expander * meas.parameters();
-              Acts::BoundSymMatrix cov =
+              Acts::BoundSquareMatrix cov =
                   expander * meas.covariance() * expander.transpose();
               // extract local position
               Acts::Vector2 lpar(par[Acts::eBoundLoc0], par[Acts::eBoundLoc1]);
               // extract local position covariance.
-              Acts::SymMatrix2 lcov =
+              Acts::SquareMatrix2 lcov =
                   cov.block<2, 2>(Acts::eBoundLoc0, Acts::eBoundLoc0);
               return std::make_pair(lpar, lcov);
             },

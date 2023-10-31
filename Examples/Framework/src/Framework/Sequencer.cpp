@@ -37,6 +37,7 @@
 #include <ratio>
 #include <regex>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <typeinfo>
 
@@ -129,7 +130,7 @@ Sequencer::Sequencer(const Sequencer::Config& cfg)
 
 void Sequencer::addContextDecorator(
     std::shared_ptr<IContextDecorator> decorator) {
-  if (not decorator) {
+  if (!decorator) {
     throw std::invalid_argument("Can not add empty/NULL context decorator");
   }
   m_decorators.push_back(std::move(decorator));
@@ -137,7 +138,7 @@ void Sequencer::addContextDecorator(
 }
 
 void Sequencer::addReader(std::shared_ptr<IReader> reader) {
-  if (not reader) {
+  if (!reader) {
     throw std::invalid_argument("Can not add empty/NULL reader");
   }
   m_readers.push_back(reader);
@@ -145,7 +146,7 @@ void Sequencer::addReader(std::shared_ptr<IReader> reader) {
 }
 
 void Sequencer::addAlgorithm(std::shared_ptr<IAlgorithm> algorithm) {
-  if (not algorithm) {
+  if (!algorithm) {
     throw std::invalid_argument("Can not add empty/NULL algorithm");
   }
 
@@ -153,14 +154,14 @@ void Sequencer::addAlgorithm(std::shared_ptr<IAlgorithm> algorithm) {
 }
 
 void Sequencer::addWriter(std::shared_ptr<IWriter> writer) {
-  if (not writer) {
+  if (!writer) {
     throw std::invalid_argument("Can not add empty/NULL writer");
   }
   addElement(std::move(writer));
 }
 
 void Sequencer::addElement(const std::shared_ptr<SequenceElement>& element) {
-  if (not element) {
+  if (!element) {
     throw std::invalid_argument("Can not add empty/NULL element");
   }
 
@@ -327,7 +328,7 @@ std::pair<std::size_t, std::size_t> Sequencer::determineEventsRange() const {
     return kInvalidEventsRange;
   }
   // events range was not defined by either the readers or user command line.
-  if ((beg == 0u) and (end == SIZE_MAX) and (!m_cfg.events.has_value())) {
+  if ((beg == 0u) && (end == SIZE_MAX) && (!m_cfg.events.has_value())) {
     ACTS_ERROR("Could not determine number of events");
     return kInvalidEventsRange;
   }
@@ -419,7 +420,7 @@ int Sequencer::run() {
   // processing only works w/ a well-known number of events
   // error message is already handled by the helper function
   std::pair<size_t, size_t> eventsRange = determineEventsRange();
-  if ((eventsRange.first == SIZE_MAX) and (eventsRange.second == SIZE_MAX)) {
+  if ((eventsRange.first == SIZE_MAX) && (eventsRange.second == SIZE_MAX)) {
     return EXIT_FAILURE;
   }
 
@@ -655,9 +656,17 @@ std::pair<std::string, std::size_t> Sequencer::fpeMaskCount(
     const boost::stacktrace::stacktrace& st, Acts::FpeType type) const {
   for (const auto& frame : st) {
     std::string loc = Acts::FpeMonitor::getSourceLocation(frame);
-    for (const auto& [filt, fType, count] : m_cfg.fpeMasks) {
-      if (boost::algorithm::ends_with(loc, filt) && fType == type) {
-        return {filt, count};
+    auto it = loc.find_last_of(':');
+    std::string locFile = loc.substr(0, it);
+    unsigned int locLine = std::stoi(loc.substr(it + 1));
+    for (const auto& [file, lines, fType, count] : m_cfg.fpeMasks) {
+      const auto [start, end] = lines;
+      if (boost::algorithm::ends_with(locFile, file) &&
+          (start <= locLine && locLine < end) && fType == type) {
+        std::string ls = start + 1 == end ? std::to_string(start)
+                                          : "(" + std::to_string(start) + ", " +
+                                                std::to_string(end) + "]";
+        return {file + ":" + ls, count};
       }
     }
   }
@@ -672,6 +681,19 @@ Acts::FpeMonitor::Result Sequencer::fpeResult() const {
         [](const auto& lhs, const auto& rhs) { return lhs.merged(rhs); }));
   }
   return merged;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const ActsExamples::Sequencer::FpeMask& m) {
+  os << "FpeMask(" << m.file << ":";
+
+  if (m.lines.first + 1 == m.lines.second) {
+    os << m.lines.first;
+  } else {
+    os << "(" << m.lines.first << ", " << m.lines.second << "]";
+  }
+  os << ", " << m.type << " <= " << m.count << ")";
+  return os;
 }
 
 }  // namespace ActsExamples

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Acts/EventData/SourceLink.hpp"
+#include "Acts/Geometry/TrackingGeometry.hpp"
 #include "Acts/Surfaces/Surface.hpp"
 #include "ActsExamples/EventData/GeometryContainers.hpp"
 #include "ActsExamples/EventData/Index.hpp"
@@ -45,18 +46,27 @@ class IndexSourceLink final {
 
   Acts::GeometryIdentifier geometryId() const { return m_geometryId; }
 
+  struct SurfaceAccessor {
+    const Acts::TrackingGeometry& trackingGeometry;
+
+    const Acts::Surface* operator()(const Acts::SourceLink& sourceLink) const {
+      const auto& indexSourceLink = sourceLink.get<IndexSourceLink>();
+      return trackingGeometry.findSurface(indexSourceLink.geometryId());
+    }
+  };
+
  private:
   Acts::GeometryIdentifier m_geometryId;
   Index m_index = 0;
 
   friend bool operator==(const IndexSourceLink& lhs,
                          const IndexSourceLink& rhs) {
-    return (lhs.geometryId() == rhs.geometryId()) and
+    return (lhs.geometryId() == rhs.geometryId()) &&
            (lhs.m_index == rhs.m_index);
   }
   friend bool operator!=(const IndexSourceLink& lhs,
                          const IndexSourceLink& rhs) {
-    return not(lhs == rhs);
+    return !(lhs == rhs);
   }
 };
 

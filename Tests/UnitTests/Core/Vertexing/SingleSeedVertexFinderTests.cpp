@@ -65,7 +65,6 @@ std::vector<double> makePlaneFromTriplet(SpacePoint4SSVFT aa,
   // plane (alpha*x + beta*y + gamma*z + delta = 0)
   return {abg[0], abg[1], abg[2], delta};
 }
-/*
 /// @brief Unit test for SingleSeedVertexFinder. Fits a set of the spacepoints with planes and compare the result to the easy-to-calculate expected result
 BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_small_planes_test) {
   Acts::SingleSeedVertexFinder<SpacePoint4SSVFT>::Config singleSeedVtxCfg;
@@ -123,14 +122,14 @@ BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_small_planes_test) {
   bool vtxFound = false;
   if (vtx.ok()) {
     std::cout << "Found a vertex in the event in " << (t2 - t1).count() / 1e6
-              << " ms at x = " << vtx.value().first[0] << "mm, y = " << vtx.value().first[1]
-              << "mm, z = " << vtx.value().first[2] << "mm" << std::endl;
+              << " ms at x = " << vtx.value()[0] << "mm, y = " << vtx.value()[1]
+              << "mm, z = " << vtx.value()[2] << "mm" << std::endl;
     std::cout << "Truth vertex was at x = " << vtxX << "mm, y = " << vtxY
               << "mm, z = " << vtxZ << "mm" << std::endl;
 
-    if (std::abs(vtxX - vtx.value().first[0]) < 1e-3 &&
-        std::abs(vtxY - vtx.value().first[1]) < 1e-3 &&
-        std::abs(vtxZ - vtx.value().first[2]) < 1e-3) {
+    if (std::abs(vtxX - vtx.value()[0]) < 1e-3 &&
+        std::abs(vtxY - vtx.value()[1]) < 1e-3 &&
+        std::abs(vtxZ - vtx.value()[2]) < 1e-3) {
       vtxFound = true;
     }
   } else {
@@ -199,14 +198,14 @@ BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_small_rays_test) {
   bool vtxFound = false;
   if (vtx.ok()) {
     std::cout << "Found a vertex in the event in " << (t2 - t1).count() / 1e6
-              << " ms at x = " << vtx.value().first[0] << "mm, y = " << vtx.value().first[1]
-              << "mm, z = " << vtx.value().first[2] << "mm" << std::endl;
+              << " ms at x = " << vtx.value()[0] << "mm, y = " << vtx.value()[1]
+              << "mm, z = " << vtx.value()[2] << "mm" << std::endl;
     std::cout << "Truth vertex was at x = " << vtxX << "mm, y = " << vtxY
               << "mm, z = " << vtxZ << "mm" << std::endl;
 
-    if (std::abs(vtxX - vtx.value().first[0]) < 1e-3 &&
-        std::abs(vtxY - vtx.value().first[1]) < 1e-3 &&
-        std::abs(vtxZ - vtx.value().first[2]) < 1e-3) {
+    if (std::abs(vtxX - vtx.value()[0]) < 1e-3 &&
+        std::abs(vtxY - vtx.value()[1]) < 1e-3 &&
+        std::abs(vtxZ - vtx.value()[2]) < 1e-3) {
       vtxFound = true;
     }
   } else {
@@ -323,18 +322,18 @@ BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_full_planes_test) {
 
     if (vtx.ok()) {
       std::cout << "Found a vertex in the event in " << (t2 - t1).count() / 1e6
-                << " ms at x = " << vtx.value().first[0]
-                << "mm, y = " << vtx.value().first[1] << "mm, z = " << vtx.value().first[2]
+                << " ms at x = " << vtx.value()[0]
+                << "mm, y = " << vtx.value()[1] << "mm, z = " << vtx.value()[2]
                 << "mm" << std::endl;
       std::cout << "Truth vertex was at x = " << vtxX << "mm, y = " << vtxY
                 << "mm, z = " << vtxZ << "mm" << std::endl;
-      std::cout << "Difference is in x = " << std::abs(vtxX - vtx.value().first[0])
-                << "mm, y = " << std::abs(vtxY - vtx.value().first[1])
-                << "mm, z = " << std::abs(vtxZ - vtx.value().first[2]) << "mm"
+      std::cout << "Difference is in x = " << std::abs(vtxX - vtx.value()[0])
+                << "mm, y = " << std::abs(vtxY - vtx.value()[1])
+                << "mm, z = " << std::abs(vtxZ - vtx.value()[2]) << "mm"
                 << std::endl;
-      if (std::abs(vtxX - vtx.value().first[0]) < 2.0 &&
-          std::abs(vtxY - vtx.value().first[1]) < 2.0 &&
-          std::abs(vtxZ - vtx.value().first[2]) < 0.3) {
+      if (std::abs(vtxX - vtx.value()[0]) < 2.0 &&
+          std::abs(vtxY - vtx.value()[1]) < 2.0 &&
+          std::abs(vtxZ - vtx.value()[2]) < 0.3) {
         ++vtxFound;
       }
     } else {
@@ -427,18 +426,18 @@ BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_full_rays_test) {
 
     if (vtx.ok()) {
       std::cout << "Found a vertex in the event in " << (t2 - t1).count() / 1e6
-                << " ms at x = " << vtx.value().first[0]
-                << "mm, y = " << vtx.value().first[1] << "mm, z = " << vtx.value().first[2]
+                << " ms at x = " << vtx.value()[0]
+                << "mm, y = " << vtx.value()[1] << "mm, z = " << vtx.value()[2]
                 << "mm" << std::endl;
       std::cout << "Truth vertex was at x = " << vtxX << "mm, y = " << vtxY
                 << "mm, z = " << vtxZ << "mm" << std::endl;
-      std::cout << "Difference is in x = " << std::abs(vtxX - vtx.value().first[0])
-                << "mm, y = " << std::abs(vtxY - vtx.value().first[1])
-                << "mm, z = " << std::abs(vtxZ - vtx.value().first[2]) << "mm"
+      std::cout << "Difference is in x = " << std::abs(vtxX - vtx.value()[0])
+                << "mm, y = " << std::abs(vtxY - vtx.value()[1])
+                << "mm, z = " << std::abs(vtxZ - vtx.value()[2]) << "mm"
                 << std::endl;
-      if (std::abs(vtxX - vtx.value().first[0]) < 0.3 &&
-          std::abs(vtxY - vtx.value().first[1]) < 0.3 &&
-          std::abs(vtxZ - vtx.value().first[2]) < 0.3) {
+      if (std::abs(vtxX - vtx.value()[0]) < 0.3 &&
+          std::abs(vtxY - vtx.value()[1]) < 0.3 &&
+          std::abs(vtxZ - vtx.value()[2]) < 0.3) {
         ++vtxFound;
       }
     } else {
@@ -455,4 +454,3 @@ BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_full_rays_test) {
   // check if all vertices have compatible positions
   BOOST_CHECK(vtxFound == nEvents);
 }
-*/

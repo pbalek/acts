@@ -25,10 +25,6 @@ Acts::Svg::SurfaceArrayConverter::convert(
 
   const auto& surfaces = surfaceArray.surfaces();
 
-  // The local logger
-  ACTS_LOCAL_LOGGER(
-      getDefaultLogger("SurfaceArraySvgConverter", cOptions.logLevel));
-
   // The edges of the grid
   auto binning = surfaceArray.binningValues();
   auto axes = surfaceArray.getAxes();
@@ -36,7 +32,7 @@ Acts::Svg::SurfaceArrayConverter::convert(
   enum ViewType { cylinder, polar, planar, none };
   ViewType vType = none;
 
-  if (not binning.empty() and binning.size() == 2 and axes.size() == 2) {
+  if (!binning.empty() && binning.size() == 2 && axes.size() == 2) {
     // The endges values
     std::vector<Acts::ActsScalar> edges0;
     std::vector<Acts::ActsScalar> edges1;
@@ -52,25 +48,25 @@ Acts::Svg::SurfaceArrayConverter::convert(
     };
 
     // Walk through the binning and translate
-    if (binning[0] == binPhi and binning[1] == binZ) {
+    if (binning[0] == binPhi && binning[1] == binZ) {
       vType = cylinder;
       //  flip to fit with actsvg convention
       edges1 = axes[0]->getBinEdges();
       edges0 = axes[1]->getBinEdges();
       pGrid._type = actsvg::proto::grid::e_z_phi;
-    } else if (binning[0] == binPhi and binning[1] == binR) {
+    } else if (binning[0] == binPhi && binning[1] == binR) {
       vType = polar;
       //  flip to fit with actsvg convention
       edges1 = axes[0]->getBinEdges();
       edges0 = axes[1]->getBinEdges();
       pGrid._type = actsvg::proto::grid::e_r_phi;
-    } else if (binning[0] == binZ and binning[1] == binPhi) {
+    } else if (binning[0] == binZ && binning[1] == binPhi) {
       // good
       vType = cylinder;
       edges0 = axes[0]->getBinEdges();
       edges1 = axes[1]->getBinEdges();
       pGrid._type = actsvg::proto::grid::e_z_phi;
-    } else if (binning[0] == binR and binning[1] == binPhi) {
+    } else if (binning[0] == binR && binning[1] == binPhi) {
       // good
       vType = polar;
       edges0 = axes[0]->getBinEdges();
@@ -117,7 +113,6 @@ Acts::Svg::SurfaceArrayConverter::convert(
     }
   }
 
-  ACTS_DEBUG("Found " << templateObjects.size() << " templates for this layer");
   // Estimate a reference radius
   ActsScalar radius = 0.;
 
@@ -158,7 +153,7 @@ Acts::Svg::SurfaceArrayConverter::convert(
       }
     }
     // Correct view transform for disc/planar layers
-    if (vType == planar or vType == polar) {
+    if (vType == planar || vType == polar) {
       // Get the transform and estimate the rotation of phi
       // Assumes x/y view
       const auto& sTransform = sf->transform(gctx);

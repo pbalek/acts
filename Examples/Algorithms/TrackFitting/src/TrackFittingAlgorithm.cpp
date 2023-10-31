@@ -9,7 +9,7 @@
 #include "ActsExamples/TrackFitting/TrackFittingAlgorithm.hpp"
 
 #include "Acts/Definitions/Algebra.hpp"
-#include "Acts/EventData/SingleBoundTrackParameters.hpp"
+#include "Acts/EventData/GenericBoundTrackParameters.hpp"
 #include "Acts/EventData/SourceLink.hpp"
 #include "Acts/EventData/TrackProxy.hpp"
 #include "Acts/EventData/VectorMultiTrajectory.hpp"
@@ -106,7 +106,7 @@ ActsExamples::ProcessCode ActsExamples::TrackFittingAlgorithm::execute(
   std::vector<Acts::SourceLink> trackSourceLinks;
   for (std::size_t itrack = 0; itrack < protoTracks.size(); ++itrack) {
     // Check if you are not in picking mode
-    if (m_cfg.pickTrack > -1 and m_cfg.pickTrack != static_cast<int>(itrack)) {
+    if (m_cfg.pickTrack > -1 && m_cfg.pickTrack != static_cast<int>(itrack)) {
       continue;
     }
 
@@ -123,7 +123,7 @@ ActsExamples::ProcessCode ActsExamples::TrackFittingAlgorithm::execute(
 
     ACTS_VERBOSE("Initial parameters: "
                  << initialParams.fourPosition(ctx.geoContext).transpose()
-                 << " -> " << initialParams.unitDirection().transpose());
+                 << " -> " << initialParams.direction().transpose());
 
     // Clear & reserve the right size
     trackSourceLinks.clear();

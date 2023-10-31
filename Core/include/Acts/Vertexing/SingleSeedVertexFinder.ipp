@@ -55,11 +55,9 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::SingleSeedVertexFinder(
 }
 
 template <typename spacepoint_t>
-std::pair<Acts::Result<Acts::Vector3>, std::vector<std::vector<Acts::ActsScalar>>>
+Acts::Result<Acts::Vector3>
 Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     const std::vector<spacepoint_t>& spacepoints) const {
-  ACTS_INFO("Size of spacepoints = "<<spacepoints.size()*sizeof(spacepoints[0]));
-  
   // sort spacepoints to different phi and z slices
   Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints
       sortedSpacepoints = sortSpacepoints(spacepoints);
@@ -96,22 +94,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
                << ", allowed values are \"planes\" or \"rays\" ");
   }
 
-  // ACTS_INFO("Size of sortedSpacepoints = "<<sizeof(sortedSpacepoints.sortedSP[0][0][0])*spacepoints.size());
-  // ACTS_INFO("B-Size of triplets = "<<triplets.size()<<" that is "<<triplets.size()*sizeof(triplets.at(0))*sizeof(Acts::ActsScalar)<<", ActsScalar "<<sizeof(Acts::ActsScalar));
-
-  // FILE* file = fopen("/proc/self/status", "r");
-  // char line[128];
-  // while (fgets(line, 128, file) != NULL){
-  //     if (strncmp(line, "VmSize:", 7) == 0){
-  //         ACTS_INFO("In the end of SingleSeedVertexFinder: VmSize="<<line);
-  //     }
-  //     if (strncmp(line, "VmRSS:", 6) == 0){
-  //       ACTS_INFO("In the end of SingleSeedVertexFinder: VmRSS="<<line);
-  //     }
-  // }
-  // fclose(file);
-
-  return {Acts::Result<Acts::Vector3>::success(vtx), rejectVector};
+  return Acts::Result<Acts::Vector3>::success(vtx);
 }
 
 template <typename spacepoint_t>
@@ -161,19 +144,6 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::sortSpacepoints(
     }
   }
 
-  std::uint32_t counter[3]={0,0,0};
-  for(std::uint32_t la=0;la<3;++la)
-  {
-    for(std::uint32_t phi=0;phi<m_cfg.numPhiSlices;++phi)
-    {
-      for(std::uint32_t z=0;z<m_cfg.numZSlices;++z)
-      {
-        counter[la]+=sortedSpacepoints.getSP(la,phi,z).size();
-      }
-    }
-  }
-  ACTS_INFO("have sorted spacepoints: "<<counter[0]<<", "<<counter[1]<<", "<<counter[2]);
-
   return sortedSpacepoints;
 }
 
@@ -187,10 +157,6 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
   std::uint32_t phiStep =
       (std::uint32_t)(m_cfg.maxPhideviation / (2 * M_PI / m_cfg.numPhiSlices)) +
       1;
-
-  std::uint32_t considered_triplets = 0;
-  std::uint32_t rej0=0, rej1 = 0, rej2 = 0, rej3 = 0, rej4 = 0;
-  std::uint32_t good_triplets = 0;
 
   // calculate limits for middle spacepoints
   Acts::Vector2 vecA{-m_cfg.maxAbsZ + m_cfg.maxZPosition, m_cfg.rMinFar};
@@ -385,8 +351,6 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
     }                // loop over near Z slices
   }                  // loop over middle Z slices
 
-  ACTS_INFO("considered "<<considered_triplets<<", good "<<good_triplets<<", i.e. bad "<<considered_triplets-good_triplets);
-  ACTS_INFO("rejected  total - "<<rej0<<"; rejected by step 1 - "<<rej1<<", by step 2 - "<<rej2<<", by step 3 - "<<rej3<<", by step 4 - "<<rej4);
   return triplets;
 }
 

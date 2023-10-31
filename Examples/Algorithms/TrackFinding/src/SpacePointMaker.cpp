@@ -41,7 +41,7 @@ ActsExamples::SpacePointMaker::SpacePointMaker(Config cfg,
   if (m_cfg.outputSpacePoints.empty()) {
     throw std::invalid_argument("Missing space point output collection");
   }
-  if (not m_cfg.trackingGeometry) {
+  if (!m_cfg.trackingGeometry) {
     throw std::invalid_argument("Missing tracking geometry");
   }
   if (m_cfg.geometrySelection.empty()) {
@@ -54,7 +54,7 @@ ActsExamples::SpacePointMaker::SpacePointMaker(Config cfg,
 
   // ensure geometry selection contains only valid inputs
   for (const auto& geoId : m_cfg.geometrySelection) {
-    if ((geoId.approach() != 0u) or (geoId.boundary() != 0u) or
+    if ((geoId.approach() != 0u) || (geoId.boundary() != 0u) ||
         (geoId.sensitive() != 0u)) {
       throw std::invalid_argument(
           "Invalid geometry selection: only volume and layer are allowed to be "
@@ -97,6 +97,12 @@ ActsExamples::SpacePointMaker::SpacePointMaker(Config cfg,
   auto spBuilderConfig = Acts::SpacePointBuilderConfig();
   spBuilderConfig.trackingGeometry = m_cfg.trackingGeometry;
 
+  m_slSurfaceAccessor.emplace(
+      IndexSourceLink::SurfaceAccessor{*m_cfg.trackingGeometry});
+  spBuilderConfig.slSurfaceAccessor
+      .connect<&IndexSourceLink::SurfaceAccessor::operator()>(
+          &m_slSurfaceAccessor.value());
+
   auto spConstructor =
       [](const Acts::Vector3& pos, const Acts::Vector2& cov,
          boost::container::static_vector<Acts::SourceLink, 2> slinks)
@@ -125,7 +131,7 @@ ActsExamples::ProcessCode ActsExamples::SpacePointMaker::execute(
         [](const auto& measurement) {
           auto expander = measurement.expander();
           Acts::BoundVector par = expander * measurement.parameters();
-          Acts::BoundSymMatrix cov =
+          Acts::BoundSquareMatrix cov =
               expander * measurement.covariance() * expander.transpose();
           return std::make_pair(par, cov);
         },
