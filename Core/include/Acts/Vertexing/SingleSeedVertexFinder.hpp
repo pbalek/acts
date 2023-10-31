@@ -93,10 +93,10 @@ class SingleSeedVertexFinder {
     /// if the vertex estimation moves less than this, stop iterations
     Acts::ActsScalar minVtxShift = 0.3f * Acts::UnitConstants::mm;
     /// valid only for "mixed" option of "minimalizeWRT"
-    /// eccentricity of a virtual ellipse semi-minor axis defines the
-    /// unity distance of chi2 off-plane and semi-major axis defines the
-    /// unity distance of chi2 in-plane
-    Acts::ActsScalar mixedEccentricity = 0.75;
+    /// eccentricity of a virtual ellipse semi-minor axis defines the unity
+    /// distance of chi2 off-plane and semi-major axis defines the unity
+    /// distance of chi2 in-plane; calculated as sqrt(1.-minor^2/major^2)
+    Acts::ActsScalar mixedEccentricity = std::sqrt(1.0 - 1.0/9.0);
   };
 
   /// Const access to the config
@@ -123,18 +123,16 @@ class SingleSeedVertexFinder {
   struct Triplet {
     Triplet(Acts::Vector3 abg, Acts::ActsScalar delta, Acts::Vector3 start, Acts::Vector3 dir, 
             const spacepoint_t& aa, const spacepoint_t& bb, const spacepoint_t& cc)
-        : planeABG(abg), planeDelta(delta), startPoint(start), direction(dir), 
+        : planeABG(abg), planeDelta(delta), rayStart(start), rayDirection(dir), 
           distance(0.), nearSP(aa), middleSP(bb), farSP(cc) {}
     Triplet(const spacepoint_t& aa, const spacepoint_t& bb, const spacepoint_t& cc)
-        : distance(-2.), nearSP(aa), middleSP(bb), farSP(cc) {} // TODO: unnecessary assignment
-    Triplet(Acts::ActsScalar dist, const spacepoint_t& aa, const spacepoint_t& bb, const spacepoint_t& cc)
-        : distance(dist), nearSP(aa), middleSP(bb), farSP(cc) {}
+        : distance(-1.), nearSP(aa), middleSP(bb), farSP(cc) {} // TODO: unnecessary assignment
 
-    Acts::Vector3 getStartPoint() const {
-      return startPoint;
+    Acts::Vector3 getRayStart() const {
+      return rayStart;
     }
-    Acts::Vector3 getDirection() const {
-      return direction;
+    Acts::Vector3 getRayDirection() const {
+      return rayDirection;
     }
 
     Acts::Vector3 getPlaneABG() const {
@@ -153,7 +151,7 @@ class SingleSeedVertexFinder {
     
     Acts::Vector3 planeABG;
     Acts::ActsScalar planeDelta;
-    Acts::Vector3 startPoint, direction;
+    Acts::Vector3 rayStart, rayDirection;
     Acts::ActsScalar distance;
     std::reference_wrapper<const spacepoint_t> nearSP, middleSP, farSP;
   };
@@ -233,28 +231,16 @@ class SingleSeedVertexFinder {
   std::pair<Acts::Vector3, Acts::ActsScalar> makePlaneFromTriplet(
       const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) const;
 
-  // /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all planes defined by the triplets
-  // /// @param triplets Vector of all valid triplets
-  // /// @return Position {x,y,z} of the vertex
-  // Acts::Vector3 findClosestPointFromPlanes(
-  //     std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const;
-
   /// @brief Calculates parameters of the ray (starting point + direction), given the three points
   /// @param a,b,c Spacepoints to form a triplet to be validated
   /// @return A ray of {starting_point, direction}
   std::pair<Acts::Vector3, Acts::Vector3> makeRayFromTriplet(const spacepoint_t& a, const spacepoint_t& b, const spacepoint_t& c) const;
 
-  // /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all rays fitted through the triplets
-  // /// @param triplets Vector of all valid triplets
-  // /// @return Position {x,y,z} of the vertex
-  // Acts::Vector3 findClosestPointFromRays(
-  //     std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& triplets) const;
-
   /// @brief Find a point (=the vertex) that has minimum chi^2 with respect to all rays/planes fitted through the triplets, while accounting for mixedEccentricity
   /// @param triplets Vector of all valid triplets
   /// @return Position {x,y,z} of the vertex
   Acts::Vector3 findClosestPoint(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples, std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const;
+    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples) const;
 
   /// @brief Square of effective eccentricity; it is set to the value of m_cfg.mixedEccentricity^2 for minimalizeWRT="mixed", and to the values of 0 and 1 for "rays" and "planes", respectively.
   Acts::ActsScalar m_effectEccSq;

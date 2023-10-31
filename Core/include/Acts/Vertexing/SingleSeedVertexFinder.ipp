@@ -33,14 +33,14 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::SingleSeedVertexFinder(
   if(cfg.minimalizeWRT != "planes" && cfg.minimalizeWRT != "rays" && cfg.minimalizeWRT != "mixed") {
     ACTS_ERROR("value of minimalizeWRT is "
                << cfg.minimalizeWRT
-               << ", allowed values are \"planes\" or \"rays\" or \"mixed\".");
+               << ", allowed values are \"planes\" or \"rays\" or \"mixed\"");
   }
   if(cfg.minimalizeWRT == "mixed")
   {
     if(cfg.mixedEccentricity < 0.0 || cfg.mixedEccentricity > 1.0) {
       ACTS_ERROR("value of mixedEccentricity is "
               << cfg.mixedEccentricity
-              << ", allowed values are between 0 and 1.");
+              << ", allowed values are between 0 and 1");
     }
 
     m_effectEccSq = cfg.mixedEccentricity*cfg.mixedEccentricity;
@@ -66,28 +66,16 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet> triplets =
       findTriplets(sortedSpacepoints);
 
-  // if no valid triplets found
-  if (triplets.empty()) {
-    ACTS_INFO("triplets are empty");
+  // if none or very little valid triplets found
+  if (triplets.size() < 3) {
     return {Acts::Result<Acts::Vector3>::failure(std::error_code()), {}};
   }
-
-  std::vector<std::vector<Acts::ActsScalar>> rejectVector;
-
-  // ACTS_INFO("size of 1 Triplet "<<sizeof(Triplet)<<", size of vector7 = "<<sizeof(std::vector<double>{0.,1.,2.,3.,4.,5.,6.})+sizeof(double)*7<<" size of Ray3D "<<sizeof(Acts::Ray3D));
-
-  // ACTS_INFO("A-Size of triplets = "<<triplets.size()<<" that is "<<triplets.size()*sizeof(triplets.at(0))<<", ActsScalar "<<sizeof(Acts::ActsScalar));
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
 
   if (m_cfg.minimalizeWRT == "planes" || m_cfg.minimalizeWRT == "rays" || m_cfg.minimalizeWRT == "mixed") {
-    // find a point closest to all rays fitted through the triplets
+    // find a point closest to all the triplets
     vtx = findClosestPoint(triplets,rejectVector);
-
-    ACTS_INFO("Found mixed vertex at x = " << vtx[0]
-                                     << "mm, y = " << vtx[1]
-                                     << "mm, z = " << vtx[2] << "mm");
-
   } else {
     ACTS_ERROR("value of minimalizeWRT is "
                << m_cfg.minimalizeWRT
@@ -327,19 +315,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findTriplets(
                     auto fittedTriplet = tripletValidationAndFit(
                         *nearSP.first, *middleSP.first, *farSP.first);
                     
-                    ++considered_triplets;
-
-                    if (fittedTriplet.getDistance()>-1.5) {
+                    if (fittedTriplet.getDistance()>-0.5) {
                       triplets.push_back(fittedTriplet);
-                      ++good_triplets;
-                    }
-                    else
-                    {
-                      ++rej0;
-                      if(fittedTriplet.getDistance()>-2.15) ++rej1;
-                      if(fittedTriplet.getDistance()>-2.25) ++rej2;
-                      if(fittedTriplet.getDistance()>-2.35) ++rej3;
-                      if(fittedTriplet.getDistance()>-2.45) ++rej4;
                     }
                   }  // loop over far spacepoints
                 }    // loop over middle spacepoints
@@ -367,7 +344,7 @@ typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet Acts::SingleSeedVer
   Acts::ActsScalar deltaAlpha =
       detail::difference_periodic(alpha1, alpha2, 2 * M_PI);
   if (std::abs(deltaAlpha) > m_cfg.maxXYdeviation) {
-    return Triplet(-2.1, a,b,c);
+    return Triplet(a,b,c); // will be rejected
   }
 
   // near-middle ray
@@ -380,34 +357,32 @@ typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet Acts::SingleSeedVer
   Acts::ActsScalar cosTheta = (ab.dot(bc)) / (ab.norm() * bc.norm());
   Acts::ActsScalar theta = std::acos(cosTheta);
   if (theta > m_cfg.maxXYZdeviation) {
-    return Triplet(-2.2, a,b,c);
+    return Triplet(a,b,c); // will be rejected
   }
 
   // reject the ray if it doesn't come close to the z-axis
   auto triplet = fitTriplet(a, b, c);
-  const Acts::Vector3& startPoint = triplet.getStartPoint();
-  const Acts::Vector3& direction = triplet.getDirection();
-  // ACTS_INFO("fitted triplet: "<<startPoint[0]<<" "<<startPoint[1]<<" "<<startPoint[2]<<" .. "<<direction[0]<<" "<<direction[1]<<" "<<direction[2]);
-  // norm to z-axis and to the ray
-  Acts::Vector3 norm{-1. * direction[1], 1. * direction[0], 0};
+  const Acts::Vector3& rayStart = triplet.getRayStart();
+  const Acts::Vector3& rayDirection = triplet.getRayDirection();
+  Acts::Vector3 norm{-1. * rayDirection[1], 1. * rayDirection[0], 0};
   Acts::ActsScalar norm_size = norm.norm();
 
-  Acts::ActsScalar tanTheta = norm_size / direction[2];
+  Acts::ActsScalar tanTheta = norm_size / rayDirection[2];
   if (std::abs(tanTheta) < std::tan(m_cfg.minTheta)) {
-    return Triplet(-2.3,a,b,c);
+    return Triplet(a,b,c); // will be rejected
   }
 
   // nearest distance from the ray to z-axis
-  Acts::ActsScalar dist = std::abs(startPoint.dot(norm)) / norm_size;
+  Acts::ActsScalar dist = std::abs(rayStart.dot(norm)) / norm_size;
   if (dist > m_cfg.maxRPosition) {
-    return Triplet(-2.4, a,b,c);
+    return Triplet(a,b,c); // will be rejected
   }
 
   // z coordinate of the nearest distance from the ray to z-axis
   Acts::ActsScalar zDist =
-      direction.cross(norm).dot(startPoint) / (norm_size * norm_size);
+      rayDirection.cross(norm).dot(rayStart) / (norm_size * norm_size);
   if (std::abs(zDist) > m_cfg.maxZPosition) {
-    return Triplet(-2.5, a,b,c);
+    return Triplet(a,b,c); // will be rejected
   }
 
   return triplet;
@@ -444,7 +419,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::makePlaneFromTriplet(
   Acts::Vector3 abg = ba.cross(ca).normalized();
   Acts::ActsScalar delta = -1. * abg.dot(a);
 
-  // plane (alpha*x + beta*y + gamma*z + delta = 0)
+  // plane (alpha*x + beta*y + gamma*z + delta = 0), 
+  // split to {{alpha, beta, gamma}, delta} for convenience
   return {abg, delta};
 }
 
@@ -472,8 +448,7 @@ std::pair<Acts::Vector3, Acts::Vector3> Acts::SingleSeedVertexFinder<spacepoint_
 template <typename spacepoint_t>
 Acts::Vector3
 Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples,
-    std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const {
+    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples) const {
   // 1. define function f = sum over all triplets [distance from an unknown
   // point
   //    (x_0,y_0,z_0) to the plane defined by the triplet]
@@ -484,11 +459,6 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
-  rejectVector.clear();
-
-  // ACTS_INFO("A-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<allTriples.size());
-
-  ACTS_INFO("A-m_effectEccSq "<<m_effectEccSq);
 
   // elements of the linear equations to solve
   Acts::SymMatrix3 A = Acts::SymMatrix3::Zero() + (1.-m_effectEccSq)*Acts::SymMatrix3::Identity() * 2. * allTriples.size();
@@ -496,11 +466,11 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
   for (const auto& triplet : allTriples) {
     const Acts::Vector3& abg = triplet.getPlaneABG();
     const Acts::ActsScalar& delta = triplet.getPlaneDelta();
-    const Acts::Vector3& startPoint=triplet.getStartPoint();
-    const Acts::Vector3& direction=triplet.getDirection();
+    const Acts::Vector3& rayStart=triplet.getRayStart();
+    const Acts::Vector3& rayDirection=triplet.getRayDirection();
 
-    A += m_effectEccSq * 2. * (abg * abg.transpose()) - (1-m_effectEccSq) * 2. * (direction * direction.transpose());
-    B -= m_effectEccSq * 2. * delta * abg + (1-m_effectEccSq) * (2. * direction * (direction.dot(startPoint)) - 2. * startPoint);
+    A += m_effectEccSq * 2. * (abg * abg.transpose()) - (1-m_effectEccSq) * 2. * (rayDirection * rayDirection.transpose());
+    B -= m_effectEccSq * 2. * delta * abg + (1-m_effectEccSq) * (2. * rayDirection * (rayDirection.dot(rayStart)) - 2. * rayStart);
   }
 
   for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
@@ -509,375 +479,54 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
 
     Acts::Vector3 vtxDiff = vtx - vtxPrev;
 
-    ACTS_INFO(iter<<": vtx = "<<vtx[0]<<", "<<vtx[1]<<", "<<vtx[2]<<"; vtxDiff = "<<vtxDiff[0]<<", "<<vtxDiff[1]<<", "<<vtxDiff[2]<<"; there are "<<allTriples.size()<<" triplets");
-
-    if (vtxDiff.norm() < m_cfg.minVtxShift) {
+    if (vtxDiff.norm() < m_cfg.minVtxShift || iter == m_cfg.maxIterations) {
       // difference between the new vertex and the old vertex is not so large
+      // or it's the last iteration
       break;
     }
 
-    if (iter != m_cfg.maxIterations) {
-      // is not the last iteration
-      vtxPrev = vtx;
+    // is not the last iteration
+    vtxPrev = vtx;
 
-      for (auto& triplet : allTriples) {
-        const Acts::Vector3& abg = triplet.getPlaneABG();
-        const Acts::ActsScalar& delta = triplet.getPlaneDelta();
-        const Acts::Vector3& startPoint=triplet.getStartPoint();
-        const Acts::Vector3& direction=triplet.getDirection();
+    for (auto& triplet : allTriples) {
+      const Acts::Vector3& abg = triplet.getPlaneABG();
+      const Acts::ActsScalar& delta = triplet.getPlaneDelta();
+      const Acts::Vector3& rayStart=triplet.getRayStart();
+      const Acts::Vector3& rayDirection=triplet.getRayDirection();
 
-        const Acts::ActsScalar distanceSq = m_effectEccSq * std::abs(abg.dot(vtx) + delta) * std::abs(abg.dot(vtx) + delta) + (1.-m_effectEccSq) * (vtx - startPoint).cross(direction).squaredNorm();
-        triplet.setDistance(distanceSq);
-      }
-
-      std::sort(allTriples.begin(), allTriples.end(),
-                [](const auto& lhs, const auto& rhs) {
-                  return lhs.getDistance() < rhs.getDistance();
-                });
-
-      std::uint32_t threshold = (std::uint32_t)(allTriples.size() *
-                                                (1. - m_cfg.removeFraction));
-
-      for (std::uint32_t tr = threshold + 1; tr < allTriples.size();
-           ++tr) {
-        const Acts::Vector3& abg = allTriples[tr].getPlaneABG();
-        const Acts::ActsScalar& delta = allTriples[tr].getPlaneDelta();
-        const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
-        const Acts::Vector3& direction  = allTriples[tr].getDirection();
-
-        rejectVector.push_back({iter*1.,abg[0],abg[1],abg[2],delta,
-                                startPoint[0],startPoint[1],startPoint[2],
-                                direction[0],direction[1],direction[2]});
-
-        // remove this triplet from A and B
-        A -= m_effectEccSq * 2. * (abg * abg.transpose()) + (1-m_effectEccSq) * (Acts::SymMatrix3::Identity() * 2. -  2. * (direction * direction.transpose()));
-        B += m_effectEccSq * 2. * delta * abg + (1-m_effectEccSq) * (2. * direction * (direction.dot(startPoint)) - 2. * startPoint);
-      }
-
-      // remove all excessive triplets
-      if(threshold + 1 < allTriples.size()) {
-        ACTS_INFO("removed "<<allTriples.size()-threshold-1<<" triplets with removeFraction");
-        allTriples.erase(allTriples.begin()+threshold+1,allTriples.end());
-      }
-
-      // std::uint32_t remove_counter=0;
-      // std::uint32_t good_threshold = (std::uint32_t)(tripletsWithRays.size()*0.40);
-      // std::uint32_t bad_threshold = (std::uint32_t)(tripletsWithRays.size()*0.80);
-      // for (std::uint32_t tr = 0; tr < good_threshold; ++tr) {
-
-      //   auto& good_triplet = tripletsWithRays[tr];
-
-      //   for (std::uint32_t tr2 = std::max(tr+1,bad_threshold); tr2 < tripletsWithRays.size(); ++tr2) {
-      //     auto& bad_triplet = tripletsWithRays[tr2];
-
-      //     if(good_triplet.nearSP==bad_triplet.nearSP || 
-      //        good_triplet.middleSP==bad_triplet.middleSP || 
-      //        good_triplet.farSP==bad_triplet.farSP) {
-      //       //ACTS_INFO("good triplet tr "<<tr<<" has overlap with bad triplet tr2 "<<tr2);
-
-      //       const Acts::Vector3& abg = tripletsWithPlanes[tr2].getPlaneABG();
-      //       const Acts::ActsScalar& delta = tripletsWithPlanes[tr2].getPlaneDelta();
-
-      //       // remove this triplet from A and B
-      //       A -= 2. * (abg * abg.transpose());
-      //       B += 2. * delta * abg;
-
-      //       tripletsWithPlanes.erase(tripletsWithPlanes.begin()+tr2,tripletsWithPlanes.begin()+tr2+1);
-
-      //       --tr2;
-      //       ++remove_counter;
-      //     }
-      //   }
-      // }
-      // ACTS_INFO("removed "<<remove_counter<<" triplets with good-bad triplets / 1");
-
-      // remove_counter=0;
-      // good_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.90);
-      // bad_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.60);
-      // for (std::uint32_t tr = 0; tr < good_threshold; ++tr) {
-
-      //   auto& good_triplet = tripletsWithPlanes[tr];
-
-      //   for (std::uint32_t tr2 = std::max(tr+1,bad_threshold); tr2 < tripletsWithPlanes.size(); ++tr2) {
-      //     auto& bad_triplet = tripletsWithPlanes[tr2];
-
-      //     if((good_triplet.nearSP==bad_triplet.nearSP && 
-      //         (good_triplet.middleSP==bad_triplet.middleSP || good_triplet.farSP==bad_triplet.farSP)) ||
-      //         (good_triplet.middleSP==bad_triplet.middleSP && good_triplet.farSP==bad_triplet.farSP)) {
-      //       //ACTS_INFO("good triplet tr "<<tr<<" has overlap with bad triplet tr2 "<<tr2);
-
-      //       const Acts::Vector3& abg = tripletsWithPlanes[tr2].getPlaneABG();
-      //       const Acts::ActsScalar& delta = tripletsWithPlanes[tr2].getPlaneDelta();
-
-      //       // remove this triplet from A and B
-      //       A -= 2. * (abg * abg.transpose());
-      //       B += 2. * delta * abg;
-
-      //       tripletsWithPlanes.erase(tripletsWithPlanes.begin()+tr2,tripletsWithPlanes.begin()+tr2+1);
-
-      //       --tr2;
-      //       ++remove_counter;
-      //     }
-      //   }
-      // }
-      // ACTS_INFO("removed "<<remove_counter<<" triplets with good-bad triplets / 2");
-
-
-    }
-  }
-
-  for (std::uint32_t tr = 0; tr < allTriples.size();++tr)
-  {
-    const Acts::Vector3& abg = allTriples[tr].getPlaneABG();
-    const Acts::ActsScalar& delta = allTriples[tr].getPlaneDelta();
-    const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
-    const Acts::Vector3& direction  = allTriples[tr].getDirection();
-
-    rejectVector.push_back({-99.,abg[0],abg[1],abg[2],delta,
-                            startPoint[0],startPoint[1],startPoint[2],
-                            direction[0],direction[1],direction[2]});
-  }
-
-  ACTS_INFO("B-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; allTriples pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<allTriples.size());
-
-  return vtx;
-}
-
-////////////////////////////////
-
-/*
-template <typename spacepoint_t>
-Acts::Vector3
-Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromPlanes(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& tripletsWithPlanes) const {
-  // 1. define function f = sum over all triplets [distance from an unknown
-  // point
-  //    (x_0,y_0,z_0) to the plane defined by the triplet]
-  // 2. find minimum of "f" by partial derivations over x_0, y_0, and z_0
-  // 3. each derivation has parts linearly depending on x_0, y_0, and z_0
-  //    (will fill A[deriv][3]) or to nothing (will fill B[deriv])
-  // 4. solve A*(x_0,y_0,z_0) = B
-
-  Acts::Vector3 vtx = Acts::Vector3::Zero();
-  Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
-
-
-  ACTS_INFO("A-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<tripletsWithPlanes.size());
-
-
-  // elements of the linear equations to solve
-  Acts::SymMatrix3 A = Acts::SymMatrix3::Zero();
-  Acts::Vector3 B = Acts::Vector3::Zero();
-  for (const auto& triplet : tripletsWithPlanes) {
-    const Acts::Vector3& abg = triplet.getPlaneABG();
-    const Acts::ActsScalar& delta = triplet.getPlaneDelta();
-
-    A += 2. * (abg * abg.transpose());
-    B -= 2. * delta * abg;
-  }
-
-  for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
-    // new vertex position
-    vtx = A.lu().solve(B);
-
-    Acts::Vector3 vtxDiff = vtx - vtxPrev;
-
-    ACTS_INFO(iter<<": vtx = "<<vtx[0]<<", "<<vtx[1]<<", "<<vtx[2]<<"; vtxDiff = "<<vtxDiff[0]<<", "<<vtxDiff[1]<<", "<<vtxDiff[2]<<"; there are "<<tripletsWithPlanes.size()<<" triplets");
-
-    if (vtxDiff.norm() < m_cfg.minVtxShift) {
-      // difference between the new vertex and the old vertex is not so large
-      break;
+      const Acts::ActsScalar distanceSq = m_effectEccSq * (abg.dot(vtx) + delta) * (abg.dot(vtx) + delta) + (1.-m_effectEccSq) * (vtx - rayStart).cross(rayDirection).squaredNorm();
+      triplet.setDistance(distanceSq);
     }
 
-    if (iter != m_cfg.maxIterations) {
-      // is not the last iteration
-      vtxPrev = vtx;
+    std::sort(allTriples.begin(), allTriples.end(),
+              [](const auto& lhs, const auto& rhs) {
+                return lhs.getDistance() < rhs.getDistance();
+              });
 
-      for (auto& triplet : tripletsWithPlanes) {
-        const Acts::Vector3& abg = triplet.getPlaneABG();
-        const Acts::ActsScalar& delta = triplet.getPlaneDelta();
-        const Acts::ActsScalar distance = std::abs(abg.dot(vtx) + delta);
-        triplet.setDistance(distance);
-      }
+    std::uint32_t threshold = (std::uint32_t)(allTriples.size() *
+                                              (1. - m_cfg.removeFraction));
 
-      std::sort(tripletsWithPlanes.begin(), tripletsWithPlanes.end(),
-                [](const auto& lhs, const auto& rhs) {
-                  return lhs.getDistance() < rhs.getDistance();
-                });
+    for (std::uint32_t tr = threshold + 1; tr < allTriples.size();
+          ++tr) {
+      const Acts::Vector3& abg = allTriples[tr].getPlaneABG();
+      const Acts::ActsScalar& delta = allTriples[tr].getPlaneDelta();
+      const Acts::Vector3& rayStart = allTriples[tr].getRayStart();
+      const Acts::Vector3& rayDirection = allTriples[tr].getRayDirection();
 
-      std::uint32_t threshold = (std::uint32_t)(tripletsWithPlanes.size() *
-                                                (1. - m_cfg.removeFraction));
-
-      for (std::uint32_t tr = threshold + 1; tr < tripletsWithPlanes.size();
-           ++tr) {
-        const Acts::Vector3& abg = tripletsWithPlanes[tr].getPlaneABG();
-        const Acts::ActsScalar& delta = tripletsWithPlanes[tr].getPlaneDelta();
-
-        // remove this triplet from A and B
-        A -= 2. * (abg * abg.transpose());
-        B += 2. * delta * abg;
-      }
-
-      // remove all excessive triplets
-      if(threshold + 1 < tripletsWithPlanes.size()) {
-        ACTS_INFO("removed "<<tripletsWithPlanes.size()-threshold-1<<" triplets with removeFraction");
-        tripletsWithPlanes.erase(tripletsWithPlanes.begin()+threshold+1,tripletsWithPlanes.end());
-      }
-*/
-/*
-      std::uint32_t remove_counter=0;
-      std::uint32_t good_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.40);
-      std::uint32_t bad_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.80);
-      for (std::uint32_t tr = 0; tr < good_threshold; ++tr) {
-
-        auto& good_triplet = tripletsWithPlanes[tr];
-
-        for (std::uint32_t tr2 = std::max(tr+1,bad_threshold); tr2 < tripletsWithPlanes.size(); ++tr2) {
-          auto& bad_triplet = tripletsWithPlanes[tr2];
-
-          if(good_triplet.nearSP==bad_triplet.nearSP || 
-             good_triplet.middleSP==bad_triplet.middleSP || 
-             good_triplet.farSP==bad_triplet.farSP) {
-            //ACTS_INFO("good triplet tr "<<tr<<" has overlap with bad triplet tr2 "<<tr2);
-
-            const Acts::Vector3& abg = tripletsWithPlanes[tr2].getPlaneABG();
-            const Acts::ActsScalar& delta = tripletsWithPlanes[tr2].getPlaneDelta();
-
-            // remove this triplet from A and B
-            A -= 2. * (abg * abg.transpose());
-            B += 2. * delta * abg;
-
-            tripletsWithPlanes.erase(tripletsWithPlanes.begin()+tr2,tripletsWithPlanes.begin()+tr2+1);
-
-            --tr2;
-            ++remove_counter;
-          }
-        }
-      }
-      ACTS_INFO("removed "<<remove_counter<<" triplets with good-bad triplets / 1");
-
-      remove_counter=0;
-      good_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.90);
-      bad_threshold = (std::uint32_t)(tripletsWithPlanes.size()*0.60);
-      for (std::uint32_t tr = 0; tr < good_threshold; ++tr) {
-
-        auto& good_triplet = tripletsWithPlanes[tr];
-
-        for (std::uint32_t tr2 = std::max(tr+1,bad_threshold); tr2 < tripletsWithPlanes.size(); ++tr2) {
-          auto& bad_triplet = tripletsWithPlanes[tr2];
-
-          if((good_triplet.nearSP==bad_triplet.nearSP && 
-              (good_triplet.middleSP==bad_triplet.middleSP || good_triplet.farSP==bad_triplet.farSP)) ||
-              (good_triplet.middleSP==bad_triplet.middleSP && good_triplet.farSP==bad_triplet.farSP)) {
-            //ACTS_INFO("good triplet tr "<<tr<<" has overlap with bad triplet tr2 "<<tr2);
-
-            const Acts::Vector3& abg = tripletsWithPlanes[tr2].getPlaneABG();
-            const Acts::ActsScalar& delta = tripletsWithPlanes[tr2].getPlaneDelta();
-
-            // remove this triplet from A and B
-            A -= 2. * (abg * abg.transpose());
-            B += 2. * delta * abg;
-
-            tripletsWithPlanes.erase(tripletsWithPlanes.begin()+tr2,tripletsWithPlanes.begin()+tr2+1);
-
-            --tr2;
-            ++remove_counter;
-          }
-        }
-      }
-      ACTS_INFO("removed "<<remove_counter<<" triplets with good-bad triplets / 2");
-*/
-/*
-    }
-  }
-
-  ACTS_INFO("B-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<tripletsWithPlanes.size());
-
-  return vtx;
-}
-
-
-
-template <typename spacepoint_t>
-Acts::Vector3
-Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPointFromRays(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>&
-        tripletsWithRays) const {
-  // 1. define function f = sum over all triplets [distance from an unknown
-  // point
-  //    (x_0,y_0,z_0) to the ray defined by the triplet]
-  // 2. find minimum of "f" by partial derivations over x_0, y_0, and z_0
-  // 3. each derivation has parts linearly depending on x_0, y_0, and z_0
-  //    (will fill A[][3]) or to nothing (will fill B[])
-  // 4. solve A*(x_0,y_0,z_0) = B
-
-
-  Acts::Vector3 vtx = Acts::Vector3::Zero();
-  Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
-
-  // elements of the linear equations to solve
-  Acts::SymMatrix3 A = Acts::SymMatrix3::Identity() * 2. * tripletsWithRays.size();
-  Acts::Vector3 B = Acts::Vector3::Zero();
-  for (const auto& triplet : tripletsWithRays) {
-    // use ray saved from earlier
-    const Acts::Vector3& startPoint=triplet.getStartPoint();
-    const Acts::Vector3& direction=triplet.getDirection();
-
-    A -= 2. * (direction * direction.transpose());
-    B += -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
-  }
-
-  for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
-    // new vertex position
-    vtx = A.lu().solve(B);
-
-    Acts::Vector3 vtxDiff = vtx - vtxPrev;
-
-    ACTS_INFO(iter<<": RAY vtx = "<<vtx[0]<<", "<<vtx[1]<<", "<<vtx[2]<<"; vtxDiff = "<<vtxDiff[0]<<", "<<vtxDiff[1]<<", "<<vtxDiff[2]<<"; there are "<<tripletsWithRays.size()<<" triplets");
-
-    if (vtxDiff.norm() < m_cfg.minVtxShift) {
-      // difference between the new vertex and the old vertex is not so large
-      break;
+      // remove this triplet from A and B
+      A -= m_effectEccSq * 2. * (abg * abg.transpose()) 
+            + (1-m_effectEccSq) * (Acts::SymMatrix3::Identity() * 2.
+                -  2. * (rayDirection * rayDirection.transpose()));
+      B += m_effectEccSq * 2. * delta * abg 
+            + (1-m_effectEccSq) * (2. * rayDirection * 
+            (rayDirection.dot(rayStart)) - 2. * rayStart);
     }
 
-    if (iter != m_cfg.maxIterations) {
-      // is not the last iteration
-      vtxPrev = vtx;
-
-      for (auto& triplet : tripletsWithRays) {
-        const Acts::Vector3& startPoint=triplet.getStartPoint();
-        const Acts::Vector3& direction=triplet.getDirection();
-        const Acts::ActsScalar distance = (vtx - startPoint).cross(direction).norm();
-        triplet.setDistance(distance);
-      }
-
-      std::sort(tripletsWithRays.begin(), tripletsWithRays.end(),
-                [](const auto& lhs, const auto& rhs) {
-                  return lhs.getDistance() < rhs.getDistance();
-                });
-
-      std::uint32_t threshold = (std::uint32_t)(tripletsWithRays.size() *
-                                                (1. - m_cfg.removeFraction));
-
-      for (std::uint32_t tr = threshold + 1; tr < tripletsWithRays.size();
-           ++tr) {
-        const Acts::Vector3& startPoint = tripletsWithRays[tr].getStartPoint();
-        const Acts::Vector3& direction  = tripletsWithRays[tr].getDirection();
-
-        // remove this triplet from A and B
-        A -= Acts::SymMatrix3::Identity() * 2.;
-        A += 2. * (direction * direction.transpose());
-        B -= -2. * direction * (direction.dot(startPoint)) + 2. * startPoint;
-      }
-
-      // remove all excessive triplets
-      if(threshold + 1 < tripletsWithRays.size()) {
-        ACTS_INFO("removed "<<tripletsWithRays.size()-threshold-1<<" triplets with removeFraction");
-        tripletsWithRays.erase(tripletsWithRays.begin()+threshold+1,tripletsWithRays.end());
-      }
+    // remove all excessive triplets
+    if(threshold + 1 < allTriples.size()) {
+      allTriples.erase(allTriples.begin()+threshold+1,allTriples.end());
     }
   }
 
   return vtx;
 }
-*/
