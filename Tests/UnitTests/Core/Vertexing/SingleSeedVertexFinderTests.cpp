@@ -65,6 +65,7 @@ std::vector<double> makePlaneFromTriplet(SpacePoint4SSVFT aa,
   // plane (alpha*x + beta*y + gamma*z + delta = 0)
   return {abg[0], abg[1], abg[2], delta};
 }
+
 /// @brief Unit test for SingleSeedVertexFinder. Fits a set of the spacepoints with planes and compare the result to the easy-to-calculate expected result
 BOOST_AUTO_TEST_CASE(single_seed_vertex_finder_small_planes_test) {
   Acts::SingleSeedVertexFinder<SpacePoint4SSVFT>::Config singleSeedVtxCfg;

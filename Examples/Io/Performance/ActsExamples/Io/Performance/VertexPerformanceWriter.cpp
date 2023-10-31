@@ -75,15 +75,10 @@ ActsExamples::VertexPerformanceWriter::VertexPerformanceWriter(
     if (!m_cfg.inputAssociatedTruthParticles.empty()) {
       m_inputAssociatedTruthParticles.initialize(
           m_cfg.inputAssociatedTruthParticles);
-      if (!m_cfg.inputTrackParameters.empty()) {
-        m_inputTrackParameters.initialize(m_cfg.inputTrackParameters);
-      } else {
-        m_inputTrajectories.initialize(m_cfg.inputTrajectories);
-      }
     } else {
       m_inputMeasurementParticlesMap.initialize(
           m_cfg.inputMeasurementParticlesMap);
-      m_inputTrajectories.initialize(m_cfg.inputTrajectories);
+      m_inputTracks.initialize(m_cfg.inputTracks);
     }
   }
 
@@ -337,9 +332,8 @@ ActsExamples::ProcessCode ActsExamples::VertexPerformanceWriter::writeT(
                                  return tp.particleId() == majorityParticleId;
                                });
 
-          const auto& majorityParticle = *it;
-          trackParameters.push_back(trajectories.trackParameters(tip));
-          associatedTruthParticles.push_back(majorityParticle);
+        if (it == allTruthParticles.end()) {
+          continue;
         }
 
         trackParameters.push_back(track.createParametersAtReference());
