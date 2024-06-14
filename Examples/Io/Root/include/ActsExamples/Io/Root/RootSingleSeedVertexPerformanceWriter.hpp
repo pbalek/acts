@@ -97,6 +97,10 @@ class RootSingleSeedVertexPerformanceWriter final
   std::vector<double> m_middleSPNum;
   std::vector<double> m_farSPNum;
   std::vector<double> m_tripletNum;
+  std::vector<double> m_distance[100];
+  std::vector<double> m_distanceSize;
+
+  std::vector<float> m_diffX_i, m_diffY_i, m_diffZ_i;
 
   int getNumberOfTruePriVertices(const SimParticleContainer& collection) const;
 

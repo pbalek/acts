@@ -39,6 +39,9 @@ class SingleSeedVertexFinder {
  public:
   /// Configuration struct
   struct Config {
+
+    std::uint32_t minNumTriplets = 100;
+
     /// maximum deviation in phi between the near and middle spacepoints or
     /// middle and far spacepoints
     Acts::ActsScalar maxPhideviation = 0.08;
@@ -66,12 +69,12 @@ class SingleSeedVertexFinder {
     /// triplets that will be rejected by maxPhideviation anyway
     std::uint32_t numPhiSlices = 60;
     /// use only a fraction of available phi slices to speed up calculations;
-    Acts::ActsScalar useFracPhiSlices = 0.5;
+    Acts::ActsScalar useFracPhiSlices = 1.0;
 
     /// number of z slices
     std::uint32_t numZSlices = 150;
     /// use only a fraction of available z slices to speed up calculations;
-    Acts::ActsScalar useFracZSlices = 0.5;
+    Acts::ActsScalar useFracZSlices = 1.0;
     /// maximum |z| to consider, z slices will be done within the range
     /// (-maxAbsZ,maxAbsZ)
     /// values of maxAbsZ, maxZPosition, rMaxFar, and minTheta should be
@@ -88,13 +91,16 @@ class SingleSeedVertexFinder {
 
     /// maximum number of iterations when discarding triplets with the largest
     /// chi^2
-    std::uint32_t maxIterations = 20;
+    std::uint32_t maxIterations = 30;
+    /// minimum number of iterations when discarding triplets with the largest
+    /// chi^2
+    std::uint32_t minIterations = 10;
     /// each iteration, discard this fraction of triplets with the largest chi^2
     Acts::ActsScalar removeFraction = 0.1;
     /// if the vertex estimation moves less than this, stop iterations
     Acts::ActsScalar minVtxShift = 0.3f * Acts::UnitConstants::mm;
     /// valid only for "mixed" option of "minimalizeWRT"
-    /// eccentricity of a virtual ellipse semi-minor axis defines the
+    /// eccentricity of a virtual ellipse: semi-minor axis defines the
     /// unity distance of chi2 off-plane and semi-major axis defines the
     /// unity distance of chi2 in-plane
     Acts::ActsScalar mixedEccentricity = 0.75;
@@ -256,7 +262,7 @@ class SingleSeedVertexFinder {
   /// @param triplets Vector of all valid triplets
   /// @return Position {x,y,z} of the vertex
   Acts::Vector3 findClosestPoint(
-    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples, std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const;
+    std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples, std::vector<std::vector<Acts::ActsScalar>>& rejectVector, std::vector<std::vector<Acts::ActsScalar>>& vtx_iter) const;
 
   /// @brief Square of effective eccentricity; it is set to the value of m_cfg.mixedEccentricity^2 for minimalizeWRT="mixed", and to the values of 0 and 1 for "rays" and "planes", respectively.
   Acts::ActsScalar m_effectEccSq;

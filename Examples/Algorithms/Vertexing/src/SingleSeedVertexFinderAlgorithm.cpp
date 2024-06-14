@@ -52,6 +52,8 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
 
   Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>::Config
       singleSeedVtxCfg;
+  singleSeedVtxCfg.mixedEccentricity=std::sqrt(1.-1./(m_cfg.ecc*m_cfg.ecc));
+
   Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>
       SingleSeedVertexFinder(singleSeedVtxCfg);
 
@@ -119,6 +121,10 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
 
     // std::vector<std::pair<Acts::Vector3, double>> results{{{0.,0.,0.},-1}};
     std::vector<std::vector<double>> results{{0.,0.,0.},{-1}};
+    for(auto trip : rejectVector)
+    {
+      results.push_back(trip);
+    }
 
     m_outputSeedVertices(ctx, std::move(results));
   }

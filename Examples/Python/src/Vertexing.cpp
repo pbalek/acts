@@ -52,7 +52,7 @@ void addVertexing(Context& ctx) {
 
   ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::SingleSeedVertexFinderAlgorithm,
                                 mex, "SingleSeedVertexFinderAlgorithm",
-                                inputSpacepoints, outputVertices);
+                                inputSpacepoints, outputVertices, ecc);
 }
 
 }  // namespace Acts::Python

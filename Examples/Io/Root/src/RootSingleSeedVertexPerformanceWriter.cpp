@@ -74,6 +74,15 @@ ActsExamples::RootSingleSeedVertexPerformanceWriter::RootSingleSeedVertexPerform
     m_outputTree->Branch("truthY", &m_truthY);
     m_outputTree->Branch("truthZ", &m_truthZ);
 
+    for(int i = 0; i <100;++i)
+    {
+      m_outputTree->Branch(Form("distance_i%d",i), &m_distance[i]);
+    }
+    m_outputTree->Branch("distanceSize", &m_distanceSize);
+    m_outputTree->Branch("diffx_i", &m_diffX_i);
+    m_outputTree->Branch("diffy_i", &m_diffY_i);
+    m_outputTree->Branch("diffz_i", &m_diffZ_i);
+
     m_outputTree->Branch("nRecoVtx", &m_nrecoVtx);
     m_outputTree->Branch("nTrueVtx", &m_ntrueVtx);
     m_outputTree->Branch("nVtxDetectorAcceptance", &m_nVtxDetAcceptance);
@@ -166,8 +175,36 @@ ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::w
   // Loop over all reco vertices and find associated truth particles
   std::vector<SimParticleContainer> truthParticlesAtVtxContainer;
 
+  std::cout<<"vector vertices.size = "<<vertices.size()<<std::endl;
   std::vector<std::vector<double>> verticesReal={vertices.at(0)};
+
   std::vector<double> time=vertices.at(1);
+  std::cout<<"time, size = "<< time.size()<<" : ";
+  for(unsigned int j=0;j<time.size();++j)
+  {
+    std::cout<<time.at(j)<<" ";
+  }
+  std::cout<<std::endl;
+
+  std::vector<double> numSPs=vertices.at(102);
+  std::cout<<"numSPs, size = "<< numSPs.size()<<" : ";
+  for(unsigned int j=0;j<numSPs.size();++j)
+  {
+    std::cout<<numSPs.at(j)<<" ";
+  }
+  std::cout<<std::endl;
+
+  // for(unsigned int i=0;i<vertices.size();++i)
+  // {
+  //   std::cout<<"vertex "<<i<<", vector size "<<vertices.at(i).size()<<std::endl;
+  //   std::cout<<"    ";
+  //   for(unsigned int j=0;j<vertices.at(i).size();++j)
+  //   {
+  //     std::cout<<vertices.at(i).at(j)<<" ";
+  //   }
+  //   std::cout<<std::endl;
+  //   if(i>=200) break;
+  // }
 
   for (const auto& vtx : verticesReal) {
     // find a particle with such truth vertex
@@ -195,6 +232,54 @@ ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::w
 
       m_timeMS.push_back(time[0]);
 
+      m_nearSPNum.push_back(numSPs[0]);
+      m_middleSPNum.push_back(numSPs[1]);
+      m_farSPNum.push_back(numSPs[2]);
+      m_tripletNum.push_back(numSPs[3]);
+
+
+      for(unsigned int tr=2;tr<102;tr++)
+      {
+        // std::cout<<" diff i, tr "<<tr<<std::endl;
+        auto vtx_i=vertices.at(tr);
+        m_diffX_i.push_back(vtx_i[0] - truePos[0]);
+        m_diffY_i.push_back(vtx_i[1] - truePos[1]);
+        m_diffZ_i.push_back(vtx_i[2] - truePos[2]);
+      }
+
+      for(unsigned int tr=103;tr<vertices.size();tr++)
+      {
+        // std::cout<<" triplet, tr "<<tr<<std::endl;
+        auto triplet=vertices.at(tr);
+
+        int iter=(int)(triplet[0]+0.01);
+        double * abg = &(triplet[1]);
+        double * delta = &(triplet[4]);
+        double * startPoint = &(triplet[5]);
+        double * direction  = &(triplet[8]);
+
+        double effectEccSq=(triplet[0]-iter)*10.0;
+
+        double abg_dot_vtx = abg[0]*truePos[0]+abg[1]*truePos[1]+abg[2]*truePos[2] + delta[0];
+        
+        double vtxDiff[3]={truePos[0]-startPoint[0], truePos[1]-startPoint[1], truePos[2]-startPoint[2]};
+        double diff_cross[3]={vtxDiff[1]*direction[2]-vtxDiff[2]*direction[1],
+                              vtxDiff[2]*direction[0]-vtxDiff[0]*direction[2],
+                              vtxDiff[0]*direction[1]-vtxDiff[1]*direction[0]};
+
+        double distanceSq=effectEccSq*abg_dot_vtx*abg_dot_vtx + (1.-effectEccSq)*(diff_cross[0]*diff_cross[0]+diff_cross[1]*diff_cross[1]+diff_cross[2]*diff_cross[2]);
+
+        // ACTS_INFO(iter<<" "<<tr<<" : abg = "<<abg[0]<<", "<<abg[1]<<", "<<abg[2]<<"; delta = "<<delta<<"; startPoint "<<startPoint[0]<<", "<<startPoint[1]<<", "<<startPoint[2]<<", direction = "<<direction[0]<<", "<<direction[1]<<", "<<direction[2]);
+        // ACTS_INFO(iter<<" "<<tr<<" : effectEccSq = "<<effectEccSq<<", dist sq to plane "<<abg_dot_vtx * abg_dot_vtx <<", dist sq to ray "<< (diff_cross[0]*diff_cross[0]+diff_cross[1]*diff_cross[1]+diff_cross[2]*diff_cross[2]));
+
+        m_distance[iter].push_back(std::sqrt(distanceSq));
+      }
+
+      for(unsigned int iter=0;iter<100;iter++)
+      {
+        m_distanceSize.push_back(m_distance[iter].size());
+      }
+
       break;  // particle loop
     }
   }
@@ -219,11 +304,21 @@ ActsExamples::ProcessCode ActsExamples::RootSingleSeedVertexPerformanceWriter::w
   m_recoX.clear();
   m_recoY.clear();
   m_recoZ.clear();
+  for(int i = 0; i <100;++i)
+  {
+    m_distance[i].clear();
+  }
+  m_distanceSize.clear();
+  m_diffX_i.clear();
+  m_diffY_i.clear();
+  m_diffZ_i.clear();
   m_timeMS.clear();
   m_nearSPNum.clear();
   m_middleSPNum.clear();
   m_farSPNum.clear();
   m_tripletNum.clear();
+
+  std::cout<<"writing done."<<std::endl;
 
   return ProcessCode::SUCCESS;
 }

@@ -16,6 +16,11 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::SingleSeedVertexFinder(
     const Acts::SingleSeedVertexFinder<spacepoint_t>::Config& cfg,
     std::unique_ptr<const Logger> lgr)
     : m_cfg(cfg), m_logger(std::move(lgr)) {
+  if (m_cfg.minNumTriplets<100) {
+    ACTS_INFO("value of minNumTriplets is "
+              << cfg.minNumTriplets
+              << "; this algorithm needs at least few hundreds triplets to work properly.");
+  }
   if (cfg.numPhiSlices < 3) {
     ACTS_INFO("value of numPhiSlices is "
               << cfg.numPhiSlices
@@ -64,27 +69,73 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   Acts::SingleSeedVertexFinder<spacepoint_t>::SortedSpacepoints
       sortedSpacepoints = sortSpacepoints(spacepoints);
 
+  std::cout<<"spacepoints :: "<<std::endl;
+  for(std::uint32_t sp=0;sp<spacepoints.size();++sp)
+  {
+    std::cout<<spacepoints.at(sp).x()<<" "<<
+               spacepoints.at(sp).y()<<" "<<
+               spacepoints.at(sp).z()<<" "<<std::endl;
+    
+  }
+  std::cout<<"spacepoints :: "<<std::endl;
+
   // find triplets and fit them with plane or ray
   std::vector<Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet> triplets =
       findTriplets(sortedSpacepoints);
 
-  // if no valid triplets found
-  if (triplets.empty()) {
-    ACTS_INFO("triplets are empty");
-    return {Acts::Result<Acts::Vector3>::failure(std::error_code()), {}};
-  }
+
 
   std::vector<std::vector<Acts::ActsScalar>> rejectVector;
+  std::vector<std::vector<Acts::ActsScalar>> vtx_iter;
+  
+  std::uint32_t counter[3]={0,0,0};
+  // std::cout<<"spacepoints[][3] = { "<<std::endl;
+  for(std::uint32_t la=0;la<3;++la)
+  {
+    for(std::uint32_t phi=0;phi<m_cfg.numPhiSlices;++phi)
+    {
+      for(std::uint32_t z=0;z<m_cfg.numZSlices;++z)
+      {
+        counter[la]+=sortedSpacepoints.getSP(la,phi,z).size();
+        for(std::uint32_t s=0;s<sortedSpacepoints.getSP(la,phi,z).size();++s)
+        {
+          // std::cout<<"{"<<
+          //   sortedSpacepoints.getSP(la,phi,z).at(s).first->x()<<", "<<
+          //   sortedSpacepoints.getSP(la,phi,z).at(s).first->y()<<", "<<
+          //   sortedSpacepoints.getSP(la,phi,z).at(s).first->z()<<"}, ";
+        }
+        // std::cout<<std::endl;
+      }
+    }
+  }
+  // std::cout<<" }; "<<std::endl;
+  rejectVector.push_back({1.*counter[0],1.*counter[1],1.*counter[2],1.*triplets.size()});
+
+  // if no valid triplets found
+  if (triplets.size()<m_cfg.minNumTriplets) {
+    ACTS_INFO("have "<<triplets.size()<<" triplets, need at least "<<m_cfg.minNumTriplets);
+
+    for(int i=0;i<100;++i)
+    {
+      vtx_iter.push_back({0.,0.,0.});
+    }
+    rejectVector.insert(rejectVector.begin(),vtx_iter.begin(),vtx_iter.end());
+
+    return {Acts::Result<Acts::Vector3>::failure(std::error_code()), rejectVector};
+  }
 
   // ACTS_INFO("size of 1 Triplet "<<sizeof(Triplet)<<", size of vector7 = "<<sizeof(std::vector<double>{0.,1.,2.,3.,4.,5.,6.})+sizeof(double)*7<<" size of Ray3D "<<sizeof(Acts::Ray3D));
 
   // ACTS_INFO("A-Size of triplets = "<<triplets.size()<<" that is "<<triplets.size()*sizeof(triplets.at(0))<<", ActsScalar "<<sizeof(Acts::ActsScalar));
 
+  
   Acts::Vector3 vtx = Acts::Vector3::Zero();
 
   if (m_cfg.minimalizeWRT == "planes" || m_cfg.minimalizeWRT == "rays" || m_cfg.minimalizeWRT == "mixed") {
     // find a point closest to all rays fitted through the triplets
-    vtx = findClosestPoint(triplets,rejectVector);
+    vtx = findClosestPoint(triplets,rejectVector,vtx_iter);
+
+    ACTS_INFO("size of SPs: "<<rejectVector.at(0).at(0)<<", "<<rejectVector.at(0).at(1)<<", "<<rejectVector.at(0).at(2)<<"; all triplets: "<<rejectVector.at(0).at(3));
 
     ACTS_INFO("Found mixed vertex at x = " << vtx[0]
                                      << "mm, y = " << vtx[1]
@@ -110,6 +161,9 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   //     }
   // }
   // fclose(file);
+
+  ACTS_INFO("Size of vtx_iter = "<<vtx_iter.size());
+  rejectVector.insert(rejectVector.begin(),vtx_iter.begin(),vtx_iter.end());
 
   return {Acts::Result<Acts::Vector3>::success(vtx), rejectVector};
 }
@@ -509,7 +563,8 @@ template <typename spacepoint_t>
 Acts::Vector3
 Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
     std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples,
-    std::vector<std::vector<Acts::ActsScalar>>& rejectVector) const {
+    std::vector<std::vector<Acts::ActsScalar>>& rejectVector,
+    std::vector<std::vector<Acts::ActsScalar>>& vtx_iter) const {
   // 1. define function f = sum over all triplets [distance from an unknown
   // point
   //    (x_0,y_0,z_0) to the plane defined by the triplet]
@@ -520,7 +575,8 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
 
   Acts::Vector3 vtx = Acts::Vector3::Zero();
   Acts::Vector3 vtxPrev{m_cfg.rMaxFar, m_cfg.rMaxFar, m_cfg.maxAbsZ};
-  rejectVector.clear();
+  // rejectVector.clear();
+  vtx_iter.clear();
 
   // ACTS_INFO("A-size of Acts::Vector3 "<<sizeof(Acts::Vector3)<<", "<<sizeof(std::pair<Acts::Vector3, Acts::ActsScalar>)<<"; tripletsWithRays pairs "<<sizeof(std::pair<std::pair<Acts::Vector3, Acts::ActsScalar>, Acts::ActsScalar>)<<", size "<<allTriples.size());
 
@@ -542,12 +598,13 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
   for (std::uint32_t iter = 0; iter <= m_cfg.maxIterations; iter++) {
     // new vertex position
     vtx = A.lu().solve(B);
+    vtx_iter.push_back({vtx[0],vtx[1],vtx[2]});
 
     Acts::Vector3 vtxDiff = vtx - vtxPrev;
 
     ACTS_INFO(iter<<": vtx = "<<vtx[0]<<", "<<vtx[1]<<", "<<vtx[2]<<"; vtxDiff = "<<vtxDiff[0]<<", "<<vtxDiff[1]<<", "<<vtxDiff[2]<<"; there are "<<allTriples.size()<<" triplets");
 
-    if (vtxDiff.norm() < m_cfg.minVtxShift) {
+    if (iter>=m_cfg.minIterations && vtxDiff.norm() < m_cfg.minVtxShift) {
       // difference between the new vertex and the old vertex is not so large
       break;
     }
@@ -555,15 +612,22 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
     if (iter != m_cfg.maxIterations) {
       // is not the last iteration
       vtxPrev = vtx;
-
+      // int cnt=0;
       for (auto& triplet : allTriples) {
         const Acts::Vector3& abg = triplet.getPlaneABG();
         const Acts::ActsScalar& delta = triplet.getPlaneDelta();
         const Acts::Vector3& startPoint=triplet.getStartPoint();
         const Acts::Vector3& direction=triplet.getDirection();
 
+        // distance from plane ^2  +  distance from ray ^2
+        // ACTS_INFO(iter<<" "<<cnt<<" : abg = "<<abg[0]<<", "<<abg[1]<<", "<<abg[2]<<"; delta = "<<delta<<"; startPoint "<<startPoint[0]<<", "<<startPoint[1]<<", "<<startPoint[2]<<", direction = "<<direction[0]<<", "<<direction[1]<<", "<<direction[2]);
+        // ACTS_INFO(iter<<" "<<cnt<<" : m_effectEccSq = "<<m_effectEccSq<<", dist sq to plane "<<std::abs(abg.dot(vtx) + delta) * std::abs(abg.dot(vtx) + delta) <<", dist sq to ray "<<(vtx - startPoint).cross(direction).squaredNorm());
+        
+
         const Acts::ActsScalar distanceSq = m_effectEccSq * std::abs(abg.dot(vtx) + delta) * std::abs(abg.dot(vtx) + delta) + (1.-m_effectEccSq) * (vtx - startPoint).cross(direction).squaredNorm();
         triplet.setDistance(distanceSq);
+        // ACTS_INFO(iter<<" "<<cnt<<" : distance = "<<std::sqrt(distanceSq)<<", distance for rays = "<<std::sqrt((vtx - startPoint).cross(direction).squaredNorm()));
+        // ++cnt;
       }
 
       std::sort(allTriples.begin(), allTriples.end(),
@@ -581,7 +645,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
         const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
         const Acts::Vector3& direction  = allTriples[tr].getDirection();
 
-        rejectVector.push_back({iter*1.,abg[0],abg[1],abg[2],delta,
+        rejectVector.push_back({iter*1.+m_effectEccSq*0.1,abg[0],abg[1],abg[2],delta,
                                 startPoint[0],startPoint[1],startPoint[2],
                                 direction[0],direction[1],direction[2]});
 
@@ -662,6 +726,13 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
     }
   }
 
+  for (std::uint32_t iter = vtx_iter.size(); iter < 99; iter++) {
+    vtx_iter.push_back({0.,0.,0.});
+  }
+  vtx_iter.push_back({vtx[0],vtx[1],vtx[2]});
+
+  ACTS_INFO("after fills, vtx_iter.size = "<<vtx_iter.size());
+
   for (std::uint32_t tr = 0; tr < allTriples.size();++tr)
   {
     const Acts::Vector3& abg = allTriples[tr].getPlaneABG();
@@ -669,7 +740,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findClosestPoint(
     const Acts::Vector3& startPoint = allTriples[tr].getStartPoint();
     const Acts::Vector3& direction  = allTriples[tr].getDirection();
 
-    rejectVector.push_back({-99.,abg[0],abg[1],abg[2],delta,
+    rejectVector.push_back({99.+m_effectEccSq*0.1,abg[0],abg[1],abg[2],delta,
                             startPoint[0],startPoint[1],startPoint[2],
                             direction[0],direction[1],direction[2]});
   }
