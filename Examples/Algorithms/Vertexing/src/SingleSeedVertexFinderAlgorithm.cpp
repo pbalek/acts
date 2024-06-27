@@ -37,6 +37,9 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
 
   Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>::Config
       singleSeedVtxCfg;
+  if(m_cfg.ecc>0.) singleSeedVtxCfg.mixedEccentricity=std::sqrt(1.-1./(m_cfg.ecc*m_cfg.ecc));
+  if(-1.01<m_cfg.ecc && m_cfg.ecc<-0.99) singleSeedVtxCfg.minimalizeWRT="hough";
+
   Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>
       SingleSeedVertexFinder(singleSeedVtxCfg);
 
@@ -51,8 +54,9 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
                                      << "mm, y = " << vtx.value()[1]
                                      << "mm, z = " << vtx.value()[2] << "mm");
 
-    std::vector<Acts::Vertex> vertexCollection;
-    vertexCollection.emplace_back(vtx.value());
+    std::vector<std::vector<double>> vertexCollection;
+    vertexCollection.push_back(std::vector<double>{vtx.value()[0], vtx.value()[1], vtx.value()[2]});
+    vertexCollection.push_back(std::vector<double>{(t2 - t1).count()/1e6, vtx.value()[3], vtx.value()[4]});
 
     // store found vertices
     m_outputVertices(ctx, std::move(vertexCollection));

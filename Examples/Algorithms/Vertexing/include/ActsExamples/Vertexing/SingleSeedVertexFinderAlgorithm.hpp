@@ -25,6 +25,7 @@ class SingleSeedVertexFinderAlgorithm final : public IAlgorithm {
     std::string inputSpacepoints;
     /// Output vertex collection
     std::string outputVertices;
+    double ecc;
   };
 
   SingleSeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);
@@ -43,7 +44,7 @@ class SingleSeedVertexFinderAlgorithm final : public IAlgorithm {
 
   ReadDataHandle<SimSpacePointContainer> m_inputSpacepoints{this,
                                                             "spacepoints"};
-  WriteDataHandle<std::vector<Acts::Vertex>> m_outputVertices{this,
+  WriteDataHandle<std::vector<std::vector<double>>> m_outputVertices{this,
                                                               "fittedVertices"};
 };
 

@@ -27,6 +27,7 @@
 #include "ActsExamples/Io/NuclearInteractions/RootNuclearInteractionParametersWriter.hpp"
 #include "ActsExamples/Io/Performance/CKFPerformanceWriter.hpp"
 #include "ActsExamples/Io/Performance/SeedingPerformanceWriter.hpp"
+#include "ActsExamples/Io/Performance/SingleSeedVertexPerformanceWriter.hpp"
 #include "ActsExamples/Io/Performance/TrackFinderPerformanceWriter.hpp"
 #include "ActsExamples/Io/Performance/TrackFitterPerformanceWriter.hpp"
 #include "ActsExamples/Io/Performance/VertexPerformanceWriter.hpp"
@@ -181,6 +182,12 @@ void addOutput(Context& ctx) {
   ACTS_PYTHON_DECLARE_WRITER(ActsExamples::RootVertexWriter, mex,
                              "RootVertexWriter", inputVertices, filePath,
                              fileMode, treeName);
+
+  ACTS_PYTHON_DECLARE_WRITER(ActsExamples::SingleSeedVertexPerformanceWriter, mex,
+                             "SingleSeedVertexPerformanceWriter",
+                             inputAllTruthParticles,
+                             inputSelectedTruthParticles, inputVertices,
+                             inputTime, filePath, treeName, fileMode);
 
   ACTS_PYTHON_DECLARE_WRITER(ActsExamples::TrackFinderPerformanceWriter, mex,
                              "TrackFinderPerformanceWriter", inputProtoTracks,

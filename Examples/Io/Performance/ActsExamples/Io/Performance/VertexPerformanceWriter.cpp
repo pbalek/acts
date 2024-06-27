@@ -505,8 +505,7 @@ ProcessCode VertexPerformanceWriter::writeT(
 
     double sumPt2 = calcSumPt2(vtx);
 
-    double vertexMatchFraction =
-        truthMajorityVertexTrackWeights / totalTrackWeight;
+    double vertexMatchFraction = (totalTrackWeight!=0. ? truthMajorityVertexTrackWeights / totalTrackWeight : 1.);
     RecoVertexClassification recoVertexClassification =
         RecoVertexClassification::Unknown;
 

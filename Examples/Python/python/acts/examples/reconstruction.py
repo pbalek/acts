@@ -2005,10 +2005,11 @@ def addSingleSeedVertexFinding(
     logLevel: Optional[acts.logging.Level] = None,
     inputSpacePoints: Optional[str] = "spacepoints",
     outputVertices: Optional[str] = "fittedSeedVertices",
+    ecc: Optional[float] = 2.0,
 ) -> None:
     from acts.examples import (
         SingleSeedVertexFinderAlgorithm,
-        VertexPerformanceWriter,
+        SingleSeedVertexPerformanceWriter,
     )
 
     customLogLevel = acts.examples.defaultLogging(s, logLevel)
@@ -2017,6 +2018,7 @@ def addSingleSeedVertexFinding(
         level=customLogLevel(),
         inputSpacepoints=inputSpacePoints,
         outputVertices=outputVertices,
+        ecc=ecc
     )
     s.addAlgorithm(findSingleSeedVertex)
 
@@ -2029,14 +2031,14 @@ def addSingleSeedVertexFinding(
             outputDirRoot.mkdir()
 
         s.addWriter(
-            VertexPerformanceWriter(
+            SingleSeedVertexPerformanceWriter(
                 level=customLogLevel(),
                 inputAllTruthParticles=inputParticles,
                 inputSelectedTruthParticles=selectedParticles,
-                useTracks=False,
                 inputVertices=outputVertices,
+                # inputTime=outputTime,
+                filePath=str(outputDirRoot / str("performance_seedvertexing.root")),
                 treeName="seedvertexing",
-                filePath=str(outputDirRoot / "performance_seedvertexing.root"),
             )
         )
 

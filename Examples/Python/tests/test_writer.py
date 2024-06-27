@@ -23,6 +23,7 @@ from acts.examples import (
     ObjPropagationStepsWriter,
     TrackFinderPerformanceWriter,
     SeedingPerformanceWriter,
+    SingleSeedVertexPerformanceWriter,
     RootPropagationStepsWriter,
     RootParticleWriter,
     RootTrackParameterWriter,
@@ -252,6 +253,7 @@ def test_csv_simhits_writer(tmp_path, fatras, conf_const):
         RootParticleWriter,
         TrackFinderPerformanceWriter,
         SeedingPerformanceWriter,
+        SingleSeedVertexPerformanceWriter
         RootTrackParameterWriter,
         RootMaterialTrackWriter,
         RootMeasurementWriter,
