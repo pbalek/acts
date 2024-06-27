@@ -254,6 +254,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
   */
 }
 
+
 template <typename spacepoint_t>
 std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::findHoughPeak(const std::vector<spacepoint_t>& spacepoints, double vtx_x, double vtx_y, double minZ, double maxZ, int numZBins) const {
 
