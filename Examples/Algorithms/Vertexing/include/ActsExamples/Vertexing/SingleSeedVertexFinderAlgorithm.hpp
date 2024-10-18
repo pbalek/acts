@@ -25,7 +25,7 @@ class SingleSeedVertexFinderAlgorithm final : public IAlgorithm {
     std::string inputSpacepoints;
     /// Output vertex collection
     std::string outputVertices;
-    double ecc;
+    int ecc;
   };
 
   SingleSeedVertexFinderAlgorithm(const Config& cfg, Acts::Logging::Level lvl);

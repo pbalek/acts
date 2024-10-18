@@ -90,7 +90,7 @@ ActsExamples::SingleSeedVertexPerformanceWriter::SingleSeedVertexPerformanceWrit
 
     m_outputTree->Branch("SPNum", &m_SPNum);
     m_outputTree->Branch("usedSPNum", &m_usedSPNum);
-    // m_outputTree->Branch("farSPNum", &m_farSPNum);
+    m_outputTree->Branch("peakSPNum", &m_peakSPNum);
     // m_outputTree->Branch("tripletNum", &m_tripletNum);
   }
 }
@@ -218,6 +218,9 @@ ActsExamples::ProcessCode ActsExamples::SingleSeedVertexPerformanceWriter::write
       }
       // this is the truth vertex
       const auto& truePos = particle.position();
+      ACTS_INFO("Gen. vertex at x = " << truePos[0]
+                         << "mm, y = " << truePos[1]
+                         << "mm, z = " << truePos[2] << "mm");
 
       m_diffX.push_back(vtx[0] - truePos[0]);
       m_diffY.push_back(vtx[1] - truePos[1]);
@@ -235,7 +238,7 @@ ActsExamples::ProcessCode ActsExamples::SingleSeedVertexPerformanceWriter::write
 
       m_SPNum.push_back(vertices.at(1).at(1));
       m_usedSPNum.push_back(vertices.at(1).at(2));
-      // m_farSPNum.push_back(numSPs[2]);
+      m_peakSPNum.push_back(vertices.at(1).at(3));
       // m_tripletNum.push_back(numSPs[3]);
 
 
@@ -316,7 +319,7 @@ ActsExamples::ProcessCode ActsExamples::SingleSeedVertexPerformanceWriter::write
   m_timeMS.clear();
   m_SPNum.clear();
   m_usedSPNum.clear();
-  // m_farSPNum.clear();
+  m_peakSPNum.clear();
   // m_tripletNum.clear();
 
   // std::cout<<"writing done."<<std::endl;

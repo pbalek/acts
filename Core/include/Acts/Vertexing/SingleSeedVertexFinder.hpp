@@ -90,7 +90,7 @@ class SingleSeedVertexFinder {
     Acts::ActsScalar maxRPosition = 10.f * Acts::UnitConstants::mm;
 
     /// chi^2 minimalization will happen with respect to "planes" or "rays" or "mixed"
-    std::string minimalizeWRT = "mixed";
+    std::string minimalizeWRT = "hough";
 
     /// maximum number of iterations when discarding triplets with the largest
     /// chi^2
@@ -107,6 +107,9 @@ class SingleSeedVertexFinder {
     /// unity distance of chi2 off-plane and semi-major axis defines the
     /// unity distance of chi2 in-plane
     Acts::ActsScalar mixedEccentricity = 0.75;
+
+    // std::uint32_t fillNeighbors = 0;
+    // std::uint32_t minEntries = 4;
   };
 
   /// Const access to the config
@@ -267,7 +270,7 @@ class SingleSeedVertexFinder {
   Acts::Vector3 findClosestPoint(
     std::vector<typename Acts::SingleSeedVertexFinder<spacepoint_t>::Triplet>& allTriples, std::vector<std::vector<Acts::ActsScalar>>& rejectVector, std::vector<std::vector<Acts::ActsScalar>>& vtx_iter) const;
 
-  std::pair<Acts::Vector3, double> findHoughPeak(const std::vector<spacepoint_t>& spacepoints, double vtx_x, double vtx_y, double minZ, double maxZ, int numZBins) const;
+  std::pair<Acts::Vector3, double> findHoughPeak(const std::vector<spacepoint_t>& spacepoints, double vtx_x, double vtx_y, double minZ, double maxZ, double minTheta, int numZBins, int cotThetaBins, int fillNeighbors, int minHits) const;
 
   /// @brief Square of effective eccentricity; it is set to the value of m_cfg.mixedEccentricity^2 for minimalizeWRT="mixed", and to the values of 0 and 1 for "rays" and "planes", respectively.
   Acts::ActsScalar m_effectEccSq;

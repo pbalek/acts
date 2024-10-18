@@ -8,7 +8,7 @@
 
 #include "ActsExamples/Vertexing/SingleSeedVertexFinderAlgorithm.hpp"
 
-#include "Acts/Vertexing/SingleSeedVertexFinder.hpp"
+#include "Acts/Vertexing/HoughVertexFinder.hpp"
 #include "ActsExamples/Framework/WhiteBoard.hpp"
 
 #include <chrono>
@@ -16,7 +16,7 @@
 
 ActsExamples::SingleSeedVertexFinderAlgorithm::SingleSeedVertexFinderAlgorithm(
     const Config& cfg, Acts::Logging::Level lvl)
-    : ActsExamples::IAlgorithm("SingleSeedVertexFinder", lvl), m_cfg(cfg) {
+    : ActsExamples::IAlgorithm("HoughVertexFinder", lvl), m_cfg(cfg) {
   if (m_cfg.inputSpacepoints.empty()) {
     ACTS_ERROR("You have to provide seeds");
   }
@@ -35,17 +35,15 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
   const std::vector<ActsExamples::SimSpacePoint>& inputSpacepoints =
       m_inputSpacepoints(ctx);
 
-  Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>::Config
+  Acts::HoughVertexFinder<ActsExamples::SimSpacePoint>::Config
       singleSeedVtxCfg;
-  if(m_cfg.ecc>0.) singleSeedVtxCfg.mixedEccentricity=std::sqrt(1.-1./(m_cfg.ecc*m_cfg.ecc));
-  if(-1.01<m_cfg.ecc && m_cfg.ecc<-0.99) singleSeedVtxCfg.minimalizeWRT="hough";
 
-  Acts::SingleSeedVertexFinder<ActsExamples::SimSpacePoint>
-      SingleSeedVertexFinder(singleSeedVtxCfg);
+  Acts::HoughVertexFinder<ActsExamples::SimSpacePoint>
+      HoughVertexFinder(singleSeedVtxCfg);
 
   // find vertices and measure elapsed time
   auto t1 = std::chrono::high_resolution_clock::now();
-  auto vtx = SingleSeedVertexFinder.findVertex(inputSpacepoints);
+  auto vtx = HoughVertexFinder.find(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
   if (vtx.ok()) {
     ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
@@ -56,7 +54,7 @@ ActsExamples::SingleSeedVertexFinderAlgorithm::execute(
 
     std::vector<std::vector<double>> vertexCollection;
     vertexCollection.push_back(std::vector<double>{vtx.value()[0], vtx.value()[1], vtx.value()[2]});
-    vertexCollection.push_back(std::vector<double>{(t2 - t1).count()/1e6, vtx.value()[3], vtx.value()[4]});
+    vertexCollection.push_back(std::vector<double>{(t2 - t1).count()/1e6, -999., -888., -777.});
 
     // store found vertices
     m_outputVertices(ctx, std::move(vertexCollection));

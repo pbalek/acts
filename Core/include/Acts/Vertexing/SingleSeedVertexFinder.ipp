@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <system_error>
+#include <fstream>
 
 #include <Eigen/Eigenvalues>
 
@@ -69,6 +70,117 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     const std::vector<spacepoint_t>& spacepoints) const {
   // ACTS_INFO("Have "<<spacepoints.size()<<" spacepoints, size = "<<spacepoints.size()*sizeof(spacepoints[0])<<"B");
 
+  // minTheta=1.0: eta=0.6;  minTheta=0.7: eta=1.0;  minTheta=0.27: eta=2.0; 
+  //   usedSP=SP*0.162    ;    usedSP=SP*0.217    ;    usedSP=SP*0.435;
+  // cca. 0.2*SP per unit of |eta| will be usedSP, raise to 0.3*SP for |eta|<2.0
+
+  // if(spacepoints.size()<2000 && m_cfg.mixedEccentricity<0.5)
+  // {
+  //   char outname[50];
+  //   sprintf(outname, "hough_transform_SPs_%ld.txt", spacepoints.size());
+  //   std::ofstream out(outname);
+  //   for(unsigned int sp=0; sp<spacepoints.size();++sp)
+  //   {
+  //     out << spacepoints.at(sp).x() << " "<<spacepoints.at(sp).y()<<" "<<spacepoints.at(sp).z()<<std::endl;
+  //   }
+  //   out.close();
+  // }
+
+  const double targetSP=10000.;
+  int SPNum=spacepoints.size();
+  if(SPNum<=0)
+  {
+    return Acts::Result<std::vector<double>>::success({-999., -999., -999., 1.0*spacepoints.size(), 0., 0.});
+  }
+
+  std::vector<float> absEtaRanges{0.3,0.6,0.9, 1.2,1.5,1.8, 2.1,2.4,2.7, 3.0};
+  std::vector<float> absEtaFractions{0.05,0.05,0.06, 0.07,0.08,0.09, 0.08,0.11,0.14, 0.11};
+
+  float maxAbsEta=3.0, minAbsEta=0.3;
+  Acts::ActsScalar absEtaRange=maxAbsEta;
+  Acts::ActsScalar totalFrac=0.;
+  // std::cout<<" absEtaRanges.size() "<<absEtaRanges.size()<<std::endl;
+  for(unsigned int r=0;r<absEtaRanges.size();++r)
+  {
+    Acts::ActsScalar thisRange = absEtaRanges.at(r) - (r?absEtaRanges.at(r-1):0.);
+    // std::cout<<" r "<<r<<", thisRange "<<thisRange<<std::endl;
+    Acts::ActsScalar addToTotalFrac = absEtaFractions.at(r);
+
+    // std::cout<<" new total fraction "<<totalFrac<<" + "<<addToTotalFrac<<std::endl;
+    // std::cout<<" which is about "<<(totalFrac+addToTotalFrac)*SPNum<<" spacepoints "<<std::endl;
+    if((totalFrac+addToTotalFrac)*SPNum>targetSP)
+    {
+      Acts::ActsScalar needOnly = (targetSP-totalFrac*SPNum)/(SPNum*addToTotalFrac);
+      // std::cout<<" needOnly "<<needOnly<<std::endl;
+      absEtaRange = (r?absEtaRanges.at(r-1):0.) + needOnly*thisRange;
+      // std::cout<<" absEtaRange "<<absEtaRange<<std::endl;
+      break;
+    }
+    totalFrac += addToTotalFrac;
+  }
+  if(absEtaRange>maxAbsEta) absEtaRange = maxAbsEta;
+  if(absEtaRange<minAbsEta) absEtaRange = minAbsEta;
+  double minTheta = 2.0*std::atan(std::exp(-1.0*absEtaRange));
+
+  double binsNumDecrease=1.;
+  if(SPNum<targetSP)
+  {
+    binsNumDecrease = std::pow(1.35, std::log(targetSP / SPNum));
+  }
+  int cotThetaBins = (int)(8000./binsNumDecrease);
+  
+  int fillNeighbors=0, minHits=4;
+
+  if(0.99<m_cfg.mixedEccentricity && m_cfg.mixedEccentricity<1.01)
+  {
+    // 4 entries SP>=1000, 3 entries SP<1000
+    if(SPNum<1000) minHits=3;
+  }
+  if(1.99<m_cfg.mixedEccentricity && m_cfg.mixedEccentricity<2.01)
+  {
+    // no neighbors SP>=1000, 1 neighbor SP<1000
+    if(SPNum<1000) fillNeighbors=1;
+  }
+  if(2.99<m_cfg.mixedEccentricity && m_cfg.mixedEccentricity<3.01)
+  {
+    // no neighbors SP>=1000, 1 neighbor 200<SP<1000, 3 neighbors SP<200
+    if(SPNum<1000) fillNeighbors=1;
+    if(SPNum<200) fillNeighbors=3;
+  }
+  if(3.99<m_cfg.mixedEccentricity && m_cfg.mixedEccentricity<4.01)
+  {
+    // no neighbors + 4 entries SP>=1000, 1 neighbor + 4 entries 200<SP<1000, 1 neighbor + 3 entries SP<200
+    if(SPNum<1000) fillNeighbors=1;
+    if(SPNum<200) minHits=3;
+  }
+
+  ACTS_INFO("Have m_cfg.mixedEccentricity = "<<m_cfg.mixedEccentricity<<", SPNum = "<<SPNum<<", minHits = "<<minHits<<", fillNeighbors "<<fillNeighbors);
+  
+
+  // if(SPNum*0.5 > targetSP)
+  // {
+  //   // for more than 40k SPs
+  //   double etaRange=(targetSP/SPNum)/0.25;
+  //   minTheta=2.0*std::atan(std::exp(-1.0*etaRange));
+
+  //   if(minTheta>1.275) minTheta=1.275; // eta=0.3, for more than 333k SPs
+  // }
+  // else
+  // {
+  //   // we have little SP, make minTheta even smaller
+  //   if(SPNum*0.90 < targetSP)
+  //   {
+  //     minTheta=0.1;  // eta=3.; for less than 22.2k SPs
+  //   }
+  //   else
+  //   {
+  //     // for 22.2k-40k SPs
+  //     double etaRange=(targetSP/SPNum - 0.5)/0.4 +2.;
+  //     minTheta=2.0*std::atan(std::exp(-1.0*etaRange));
+  //   }
+  // }
+
+
   if(m_cfg.minimalizeWRT == "hough")
   {
     double vtx_x = 0., vtx_y = 0., vtx_z;
@@ -77,11 +189,11 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     // Acts::Vector2 old_vtx = {vtx_x,vtx_y};
     // ACTS_INFO("Have old vertex at "<<old_vtx[0]<<", "<<old_vtx[1]);
 
-    auto [vtx_z1, usedSP] = findHoughPeak(spacepoints, vtx_x, vtx_y, -200, 200, 800);
-    ACTS_INFO("Have "<<spacepoints.size()<<" spacepoints, actually using "<<usedSP<<" spacepoints");
+    auto [vtx_z1, usedSP] = findHoughPeak(spacepoints, vtx_x, vtx_y, -200, 200, minTheta, 800, cotThetaBins, fillNeighbors, minHits);
+    ACTS_INFO("Have "<<spacepoints.size()<<" spacepoints, have minTheta "<<minTheta<<", actually using "<<usedSP<<" spacepoints, have "<<cotThetaBins<<" bins in cot Theta");
 
-    auto [vtx_z2, peak_z2] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z1[2]-30., vtx_z1[2]+30., 180);
-    auto [vtx_z3, peak_z3] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z2[2]-8., vtx_z2[2]+8., 80);
+    auto [vtx_z2, peak_z2] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z1[2]-30., vtx_z1[2]+30., minTheta, 180, cotThetaBins, fillNeighbors, minHits);
+    auto [vtx_z3, peak_z3] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z2[2]-8., vtx_z2[2]+8., minTheta, 80, cotThetaBins, fillNeighbors, minHits);
     vtx_z=vtx_z3[2];
 
     // ACTS_INFO("--- --- --- ---");
@@ -91,7 +203,7 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
     for(int iter=0; iter<0; ++iter)
     {
       // ACTS_INFO("--- --- --- ---");
-      auto [vtx_def, peak_def] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z-8., vtx_z+8., 80);
+      auto [vtx_def, peak_def] = findHoughPeak(spacepoints, vtx_x, vtx_y, vtx_z-8., vtx_z+8., minTheta, 80, cotThetaBins, fillNeighbors, minHits);
 
       double new_vtx_x=vtx_x, new_vtx_y=vtx_y, new_vtx_z=vtx_z;
       double old_vtx_new_z=-999.;
@@ -106,7 +218,9 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
         auto [vtx_tmp, peak_tmp] = findHoughPeak(spacepoints, 
                                                  vtx_x+sx*step, 
                                                  vtx_y+sy*step,
-                                                 vtx_z-10., vtx_z+10., 100);
+                                                 vtx_z-10., vtx_z+10., 
+                                                 minTheta, 100, cotThetaBins, 
+                                                 fillNeighbors, minHits);
         if(peak_tmp>peak_def)
         {
           new_vtx_x=vtx_x+sx*step;
@@ -142,10 +256,10 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
       }
     }
 
-    return Acts::Result<std::vector<double>>::success({vtx_x, vtx_y, vtx_z, 1.0*spacepoints.size(), usedSP});
+    return Acts::Result<std::vector<double>>::success({vtx_x, vtx_y, vtx_z, 1.0*spacepoints.size(), usedSP, peak_z3});
   }
 
-  return Acts::Result<std::vector<double>>::success({-999., -999., -999., 1.0*spacepoints.size(), 0.});
+  return Acts::Result<std::vector<double>>::success({-999., -999., -999., 1.0*spacepoints.size(), 0., 0.});
 
 /*
   // sort spacepoints to different phi and z slices
@@ -256,26 +370,27 @@ Acts::SingleSeedVertexFinder<spacepoint_t>::findVertex(
 
 
 template <typename spacepoint_t>
-std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::findHoughPeak(const std::vector<spacepoint_t>& spacepoints, double vtx_x, double vtx_y, double minZ, double maxZ, int numZBins) const {
+std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::findHoughPeak(const std::vector<spacepoint_t>& spacepoints, double vtx_x, double vtx_y, double minZ, double maxZ, double minTheta, int numZBins, int cotThetaBins, int fillNeighbors, int minHits) const {
 
   // int sp_counterAll=0, sp_counterSel=0, sp_counter_inBounds=0, sp_counter_outBounds=0;
   int sp_counter=0;
   // auto t1 = std::chrono::high_resolution_clock::now();
 
-  const int sizeTheta = 4000;
   const int sizeZ = numZBins;
   // minTheta=1.0: eta=0.6;  minTheta=0.7: eta=1.0;  minTheta=0.27: eta=2.0; 
-  const double minTheta = 1.0, maxTheta = M_PI-minTheta;
+  //   usedSP=SP*0.162    ;    usedSP=SP*0.217    ;    usedSP=SP*0.435;
+  // cca. 0.2*SP per unit of |eta| will be usedSP
+  // const double minTheta = 0.27;
+  const double maxTheta = M_PI-minTheta;
   const double minTanTheta = std::tan(minTheta), maxTanTheta = std::tan(maxTheta);
   const double minCotTheta = 1./maxTanTheta, maxCotTheta = 1./minTanTheta;
   // const double minZ = -200., maxZ = 200.; //, maxR=400;
-  int minHits=5;
 
   const double zBinSize = (maxZ-minZ)/sizeZ;
   // const double thetaBinSize = (maxTheta-minTheta)/sizeTheta;
-  const double cotThetaBinSize = (maxCotTheta-minCotTheta)/sizeTheta;
+  const double invCotThetaBinSize = cotThetaBins/(maxCotTheta-minCotTheta);
 
-  std::vector<int> vec_helper(sizeTheta,0);
+  std::vector<int> vec_helper(cotThetaBins,0);
   std::vector<int> z_projection(sizeZ,0);
   std::vector<std::vector<int>> matrix(sizeZ,vec_helper);
 
@@ -310,11 +425,11 @@ std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::fin
 
     // ++sp_counterSel;
 
-    double sp_r=std::sqrt((sp.x()-vtx_x)*(sp.x()-vtx_x) + (sp.y()-vtx_y)*(sp.y()-vtx_y));
+    double sp_invr=1./std::sqrt((sp.x()-vtx_x)*(sp.x()-vtx_x) + (sp.y()-vtx_y)*(sp.y()-vtx_y));
 
-    int zFrom = (int)(((sp.z()-sp_r/minTanTheta)-minZ)/zBinSize)+1;  
+    int zFrom = (int)(((sp.z()-1./(sp_invr*minTanTheta))-minZ)/zBinSize)+1;  
     if(zFrom<0) zFrom=0;
-    int zTo   = (int)(((sp.z()-sp_r/maxTanTheta)-minZ)/zBinSize);
+    int zTo   = (int)(((sp.z()-1./(sp_invr*maxTanTheta))-minZ)/zBinSize);
     if(zTo>=sizeZ) zTo=sizeZ;
 
     // ACTS_INFO("sp.z "<<sp.z()<<", sp_r "<<sp_r<<", minTanTheta "<<minTanTheta<<", minZ "<<minZ<<", zBinSize "<<zBinSize<<"; "<<((sp.z()-sp_r/minTanTheta)-minZ)/zBinSize<<";  zFrom "<<zFrom);
@@ -324,7 +439,7 @@ std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::fin
 
     for(int zBin=zFrom;zBin<zTo;zBin++) {
       // double theta = std::atan2(sp_r,(sp.z()-vtx_z));
-      double cotTheta = (sp.z()-vtx_z_pos[zBin])/sp_r;
+      double cotTheta = (sp.z()-vtx_z_pos[zBin])*sp_invr;
 
       // int thetaBin = (int)((theta-minTheta)/thetaBinSize);
       // if(thetaBin<0 || thetaBin>=sizeTheta) {
@@ -332,14 +447,20 @@ std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::fin
       //   continue;
       // }
 
-      int cotThetaBin = (int)((cotTheta-minCotTheta)/cotThetaBinSize);
+      int cotThetaBin = (int)((cotTheta-minCotTheta)*invCotThetaBinSize);
       // if(cotThetaBin<0 || cotThetaBin>=sizeTheta) {
       //   ++sp_counter_outBounds;
       //   continue;
       // }
 
       // ++sp_counter_inBounds;
-      ++matrix[zBin][cotThetaBin];
+      for(int n=0;n<=fillNeighbors;++n)
+        {
+          // houghFilt[m]->Fill(vtx_z,cot+n*cotThetaBinSize[m]);
+          // if(n!=0) houghFilt[m]->Fill(vtx_z,cot-n*cotThetaBinSize[m]);
+          if(cotThetaBin+n < cotThetaBins) ++matrix[zBin][cotThetaBin+n];
+          if(n!=0 && cotThetaBin-n >=0) ++matrix[zBin][cotThetaBin-n];
+        }
     }            
   }
 
@@ -364,16 +485,16 @@ std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::fin
   double avg=std::accumulate(z_projection.begin(), z_projection.end(), 0.)/z_projection.size();
   double sumEntries=0;
   // double onlyPeak=std::max(z_projection.at(maxZBin)-avg, 0.);
-  double meanPeak=0.,varPeak=0., skewPeak=0.,kurtPeak=0.;
+  double meanPeak=0.; //,varPeak=0., skewPeak=0.,kurtPeak=0.;
 
   int width=3;
 
   for(int zBin=std::max(maxZBin-width,0); zBin<=std::min(sizeZ-1,maxZBin+width); ++zBin) {
     sumEntries += std::max(z_projection.at(zBin)-avg, 0.);
     meanPeak   += (maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
-    varPeak    += (maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
-    skewPeak   += (maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
-    kurtPeak   += (maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
+    // varPeak    += (maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
+    // skewPeak   += (maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
+    // kurtPeak   += (maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*(maxZBin-zBin)*std::max(z_projection.at(zBin)-avg, 0.);
   }
 
  
@@ -381,24 +502,24 @@ std::pair<Acts::Vector3, double> Acts::SingleSeedVertexFinder<spacepoint_t>::fin
   if(sumEntries!=0.)
   {
     meanPeak/=sumEntries;
-    varPeak/=sumEntries;
-    skewPeak/=sumEntries;
-    kurtPeak/=sumEntries;
+    // varPeak/=sumEntries;
+    // skewPeak/=sumEntries;
+    // kurtPeak/=sumEntries;
     double real_vtx_z=(maxZ-minZ)/sizeZ * (meanPeak+maxZBin+0.5) + minZ;
 
-    if(minZ<-190)
+    if(minZ<-199 && maxZ>199)
     {
       return {{vtx_x, vtx_y, real_vtx_z}, 1.*sp_counter};
     }
 
-    if(varPeak*kurtPeak != 0.) {
-      return {{vtx_x, vtx_y, real_vtx_z}, sumEntries/(varPeak*kurtPeak)};
-    }
+    // if(varPeak*kurtPeak != 0.) {
+      return {{vtx_x, vtx_y, real_vtx_z}, sumEntries};
+    // }
 
-    return {{vtx_x, vtx_y, real_vtx_z}, 0.};
+    // return {{vtx_x, vtx_y, real_vtx_z}, 0.};
   }
 
-  if(minZ<-190)
+  if(minZ<-199 && maxZ>199)
   {
     return {{vtx_x, vtx_y, 0.}, 1.*sp_counter};
   }

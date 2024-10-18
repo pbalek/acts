@@ -95,7 +95,7 @@ class SingleSeedVertexPerformanceWriter final
   std::vector<double> m_timeMS;  ///< Reconstruction time in ms
   std::vector<double> m_SPNum;
   std::vector<double> m_usedSPNum;
-  // std::vector<double> m_farSPNum;
+  std::vector<double> m_peakSPNum;
   // std::vector<double> m_tripletNum;
   // std::vector<double> m_distance[100];
   // std::vector<double> m_distanceSize;
