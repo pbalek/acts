@@ -43,15 +43,17 @@ target_sources(
         CompositePortalLink.cpp
         PortalLinkBase.cpp
         PortalError.cpp
-        PortalShell.cpp
+        CylinderPortalShell.cpp
+        CuboidPortalShell.cpp
         BlueprintNode.cpp
         Blueprint.cpp
         BlueprintOptions.cpp
-        CylinderContainerBlueprintNode.cpp
         StaticBlueprintNode.cpp
         LayerBlueprintNode.cpp
         MaterialDesignatorBlueprintNode.cpp
         VolumeAttachmentStrategy.cpp
         VolumeResizeStrategy.cpp
         TrackingGeometryVisitor.cpp
+        VolumeStack.cpp
+        ContainerBlueprintNode.cpp
 )
