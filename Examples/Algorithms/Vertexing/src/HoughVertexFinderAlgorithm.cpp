@@ -19,8 +19,8 @@
 
 namespace ActsExamples {
 
-HoughVertexFinderAlgorithm::HoughVertexFinderAlgorithm(
-    const Config& cfg, Acts::Logging::Level lvl)
+HoughVertexFinderAlgorithm::HoughVertexFinderAlgorithm(const Config& cfg,
+                                                       Acts::Logging::Level lvl)
     : IAlgorithm("HoughVertexFinder", lvl), m_cfg(cfg) {
   if (m_cfg.inputSpacepoints.empty()) {
     ACTS_ERROR("You have to provide seeds");
@@ -33,17 +33,13 @@ HoughVertexFinderAlgorithm::HoughVertexFinderAlgorithm(
   m_outputVertices.initialize(m_cfg.outputVertices);
 }
 
-ProcessCode
-HoughVertexFinderAlgorithm::execute(
+ProcessCode HoughVertexFinderAlgorithm::execute(
     const AlgorithmContext& ctx) const {
   // retrieve input seeds
-  const std::vector<SimSpacePoint>& inputSpacepoints =
-      m_inputSpacepoints(ctx);
+  const std::vector<SimSpacePoint>& inputSpacepoints = m_inputSpacepoints(ctx);
 
-  Acts::HoughVertexFinder<SimSpacePoint>::Config
-      houghVtxCfg;
-  Acts::HoughVertexFinder<SimSpacePoint>
-      HoughVertexFinder(houghVtxCfg);
+  Acts::HoughVertexFinder<SimSpacePoint>::Config houghVtxCfg;
+  Acts::HoughVertexFinder<SimSpacePoint> HoughVertexFinder(houghVtxCfg);
 
   // find vertices and measure elapsed time
   auto t1 = std::chrono::high_resolution_clock::now();
@@ -54,7 +50,8 @@ HoughVertexFinderAlgorithm::execute(
                                                 << " ms");
     ACTS_INFO("Found vertex at x = " << vtx.value().position().x()
                                      << "mm, y = " << vtx.value().position().y()
-                                     << "mm, z = " << vtx.value().position().z() << "mm");
+                                     << "mm, z = " << vtx.value().position().z()
+                                     << "mm");
 
     std::vector<Acts::Vertex> vertexCollection;
     vertexCollection.emplace_back(vtx.value());

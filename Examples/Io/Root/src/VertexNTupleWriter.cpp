@@ -277,7 +277,7 @@ ProcessCode VertexNTupleWriter::writeT(
   // Read truth particle input collection
   const SimParticleContainer& particles = m_inputParticles(ctx);
   const SimParticleContainer& selectedParticles = m_inputSelectedParticles(ctx);
-  const TrackParticleMatching* trackParticleMatching = 
+  const TrackParticleMatching* trackParticleMatching =
       (m_cfg.useTracks ? &m_inputTrackParticleMatching(ctx) : nullptr);
 
   const ConstTrackContainer* tracks = nullptr;
@@ -474,7 +474,7 @@ ProcessCode VertexNTupleWriter::writeT(
     std::vector<std::pair<SimVertexBarcode, double>> contributingTruthVertices;
 
     double totalTrackWeight = 0;
-    if(m_cfg.useTracks) {
+    if (m_cfg.useTracks) {
       for (const Acts::TrackAtVertex& trk : tracksAtVtx) {
         if (trk.trackWeight < m_cfg.minTrkWeight) {
           continue;
@@ -493,17 +493,15 @@ ProcessCode VertexNTupleWriter::writeT(
           ACTS_VERBOSE("Track has no matching truth particle.");
         } else {
           contributingTruthVertices.emplace_back(
-              SimBarcode{particleOpt->particleId()}.vertexId(), trk.trackWeight);
+              SimBarcode{particleOpt->particleId()}.vertexId(),
+              trk.trackWeight);
         }
       }
-    }
-    else
-    {
+    } else {
       // if not using tracks, then use all truth particles
-      for(auto& particle : recoParticles)
-      {
+      for (auto& particle : recoParticles) {
         contributingTruthVertices.emplace_back(
-          SimBarcode{particle.particleId()}.vertexId(), 1.);
+            SimBarcode{particle.particleId()}.vertexId(), 1.);
       }
     }
 
@@ -524,8 +522,10 @@ ProcessCode VertexNTupleWriter::writeT(
 
     double sumPt2 = calcSumPt2(vtx);
 
-    double vertexMatchFraction = (totalTrackWeight > 0 ? 
-        truthMajorityVertexTrackWeights / totalTrackWeight : 0.);
+    double vertexMatchFraction =
+        (totalTrackWeight > 0
+             ? truthMajorityVertexTrackWeights / totalTrackWeight
+             : 0.);
     RecoVertexClassification recoVertexClassification =
         RecoVertexClassification::Unknown;
 

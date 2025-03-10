@@ -45,8 +45,8 @@ class HoughVertexFinderAlgorithm final : public IAlgorithm {
 
   ReadDataHandle<SimSpacePointContainer> m_inputSpacepoints{this,
                                                             "spacepoints"};
-  WriteDataHandle<std::vector<Acts::Vertex>> m_outputVertices{this,
-                                                              "OutputHoughVertices"};
+  WriteDataHandle<std::vector<Acts::Vertex>> m_outputVertices{
+      this, "OutputHoughVertices"};
 };
 
 }  // namespace ActsExamples

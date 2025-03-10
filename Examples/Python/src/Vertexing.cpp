@@ -54,9 +54,9 @@ void addVertexing(Context& ctx) {
                                 inputProtoVertices, outputVertices, bField,
                                 doConstrainedFit, constraintPos, constraintCov);
 
-  ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::HoughVertexFinderAlgorithm,
-                                mex, "HoughVertexFinderAlgorithm",
-                                inputSpacepoints, outputVertices);
+  ACTS_PYTHON_DECLARE_ALGORITHM(ActsExamples::HoughVertexFinderAlgorithm, mex,
+                                "HoughVertexFinderAlgorithm", inputSpacepoints,
+                                outputVertices);
 }
 
 }  // namespace Acts::Python
