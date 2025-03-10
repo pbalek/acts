@@ -1,23 +1,21 @@
-// This file is part of the Acts project.
+// This file is part of the ACTS project.
 //
-// Copyright (C) 2024 CERN for the benefit of the Acts project
+// Copyright (C) 2016 CERN for the benefit of the ACTS project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
 
 #include "Acts/Definitions/Algebra.hpp"
 #include "Acts/Definitions/Units.hpp"
 #include "Acts/Seeding/HoughTransformUtils.hpp"
-// #include "Acts/Seeding/HoughVectors.hpp"
-// #include "Acts/Utilities/AlgebraHelpers.hpp"
 #include "Acts/Utilities/Grid.hpp"
 #include "Acts/Utilities/Axis.hpp"
 #include "Acts/Utilities/Logger.hpp"
 #include "Acts/Utilities/Result.hpp"
-// #include "Acts/Utilities/detail/periodic.hpp"
+#include "Acts/Vertexing/Vertex.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -32,15 +30,14 @@ namespace Acts {
 
 /// @class HoughVertexFinder
 ///
-/// @brief Implements the vertex finder based on the track seeds
+/// @brief Implements the vertex finder based on the spacepoints using Hough transform
 /// 0. Assumes there is only 1 vertex and that it has a high multiplicity
-/// 1. Sorts out all the input spacepoints based on their distance to the z-axis
-/// 2. Create seeds from 3 spacepoints with a small deviation from a straigh
-/// line
-/// 3. Find a point with a minimal distance from either planes
-/// (minimalizeWRT="planes") or rays (minimalizeWRT="rays") defined by the the
-/// seeds
-/// 4. Returns the point position as the vertex
+/// 1. Estimates what eta range is really necessary
+/// 2. Creates Hough space from spacepoints within that eta range
+/// 3. Subtracts the coincidentally crossed lines in the Hough space
+/// 4. Makes a projection to the Z axis and finds a peak - that is the vertex position
+/// 5. Repeats 2-4 if necessary
+
 template <typename spacepoint_t>
 class HoughVertexFinder {
  public:
@@ -72,27 +69,27 @@ class HoughVertexFinder {
     std::vector<float> absEtaRanges{2.,4.};
     std::vector<float> absEtaFractions{0.4,0.6};
 
-    /// Iterations along Z axis. The algorithm may change both the range 
-    /// in Z (to reduce time) and the number of bins in Z (to achieve
+    /// Iterations along Z axis. The algorithm may reduce the range 
+    /// in Z (to reduce time) and increase the number of bins in Z (to achieve
     /// more precise result).
-    std::vector<float> rangeIterZ{200.f * Acts::UnitConstants::mm, 
-                                              30.f * Acts::UnitConstants::mm, 
-                                              16.f * Acts::UnitConstants::mm};
+    std::vector<float> rangeIterZ{200.f * UnitConstants::mm, 
+                                              30.f * UnitConstants::mm, 
+                                              16.f * UnitConstants::mm};
     std::vector<std::uint32_t> nBinsZIterZ{800, 180, 80};
     std::vector<std::uint32_t> nBinsCotThetaIterZ{8000, 8000, 8000};
 
     /// For every magnitude (in natural logarithm) below targetSPs, the number of
     /// bins in cot(theta) will decrease by this factor. Thus, the actual number
     /// of bins can be smaller than stated in "nBinsCotThetaIterZ".
-    float binsCotThetaDecrease{1.35};
+    float binsCotThetaDecrease = 1.35f;
 
     /// Width of the peak used for more precise z-position estimate
-    std::uint32_t peakWidth{3};
+    std::uint32_t peakWidth = 3;
 
     /// Default position of the vertex in X, Y, and Z coordinates
-    Acts::Vector3 defVtxPosition{0.f * Acts::UnitConstants::mm,
-                                 0.f * Acts::UnitConstants::mm,
-                                 0.f * Acts::UnitConstants::mm};
+    Vector3 defVtxPosition{0.f * UnitConstants::mm,
+                                 0.f * UnitConstants::mm,
+                                 0.f * UnitConstants::mm};
   };
 
   /// Const access to the config
@@ -101,24 +98,24 @@ class HoughVertexFinder {
   /// @brief Constructor
   /// @param cfg Configuration object
   /// @param lgr Logging instance
-  HoughVertexFinder(const Config& cfg,
-                         std::unique_ptr<const Logger> lgr = getDefaultLogger(
-                             "HoughVertexFinder", Logging::INFO));
+  explicit HoughVertexFinder(Config cfg,
+                      std::unique_ptr<const Logger> lgr = getDefaultLogger(
+                        "HoughVertexFinder", Logging::INFO));
 
-  using Axis =
-      Acts::Axis<Acts::AxisType::Equidistant, Acts::AxisBoundaryType::Open>;
-  using HoughHist = Grid<std::uint32_t, Axis, Axis>;
+  using HoughAxis =
+      Axis<AxisType::Equidistant, AxisBoundaryType::Open>;
+  using HoughHist = Grid<std::uint32_t, HoughAxis, HoughAxis>;
 
   /// @brief Finds the vertex based on the provided spacepoints
   /// @param spacepoints Vector of the input spacepoints; they do not need to be sorted anyhow
   /// @return Position of the vertex
-  Acts::Result<Acts::Vector3> find(
+  Acts::Result<Acts::Vertex> find(
       const std::vector<spacepoint_t>& spacepoints) const;
 
  private:
 
   /// Configuration instance
-  Config m_cfg;
+  const Config m_cfg;
 
   /// @brief Returns the positions of the peak along Z axis in the pojection of the Hough plane
   /// @param spacepoints Set of all spacepoints within the event
@@ -129,10 +126,15 @@ class HoughVertexFinder {
   /// @param maxCotTheta Maximum theta to consider for the spacepoint
   /// @param numCotThetaBins Number of bins along cot(theta) axis
   /// @return Position of the vertex in (X,Y,Z)
-  Acts::Result<Acts::Vector3> findHoughVertex(const std::vector<spacepoint_t>& spacepoints,
-    Acts::Vector3 vtxOld, float rangeZ, std::uint32_t numZBins,
+  Acts::Result<Acts::Vertex> findHoughVertex(const std::vector<spacepoint_t>& spacepoints,
+    Acts::Vertex vtxOld, float rangeZ, std::uint32_t numZBins,
     float minCotTheta, float maxCotTheta, std::uint32_t numCotThetaBins) const;
 
+  /// @brief Finds the peak in the Z axis projection of the Hough space
+  /// @param houghZProjection Hough space projection after the cleaning procedure
+  /// @param vtxZPositions Bins position in the Hough space projection
+  /// @param numZBins Number of bins in the Hough space projection
+  /// @return Position of the peak
   Acts::Result<float> findHoughPeak(const std::vector<std::uint32_t>& houghZProjection, const std::vector<float>& vtxZPositions, std::uint32_t numZBins) const;
 
 
@@ -145,3 +147,4 @@ class HoughVertexFinder {
 
 }  // namespace Acts
 
+#include "HoughVertexFinder.ipp"

@@ -1,56 +1,54 @@
-// This file is part of the Acts project.
+// This file is part of the ACTS project.
 //
-// Copyright (C) 2024 CERN for the benefit of the Acts project
+// Copyright (C) 2016 CERN for the benefit of the ACTS project
 //
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-#include "Acts/Vertexing/HoughVertexFinder.hpp"
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
 template <typename spacepoint_t>
 Acts::HoughVertexFinder<spacepoint_t>::HoughVertexFinder(
-    const Acts::HoughVertexFinder<spacepoint_t>::Config& cfg,
+    Config cfg,
     std::unique_ptr<const Logger> lgr)
-    : m_cfg(cfg), m_logger(std::move(lgr)) {
+    : m_cfg(std::move(cfg)), m_logger(std::move(lgr)) {
 
-  if(cfg.absEtaFractions.size() != cfg.absEtaRanges.size())
+  if(m_cfg.absEtaFractions.size() != m_cfg.absEtaRanges.size())
   {
     ACTS_ERROR("size of the absEtaFractions is "
-              << cfg.absEtaFractions.size()
+              << m_cfg.absEtaFractions.size()
               << " but size of the absEtaRanges vector is "
-              << cfg.absEtaRanges.size()
+              << m_cfg.absEtaRanges.size()
               <<"; these two have to be equal.");
   }
 
-  if(cfg.rangeIterZ.size() != cfg.nBinsZIterZ.size())
+  if(m_cfg.rangeIterZ.size() != m_cfg.nBinsZIterZ.size())
   {
     ACTS_ERROR("size of the rangeIterZ is "
-              << cfg.rangeIterZ.size()
+              << m_cfg.rangeIterZ.size()
               << " but size of the nBinsZIterZ vector is "
-              << cfg.nBinsZIterZ.size()
+              << m_cfg.nBinsZIterZ.size()
               <<"; these two have to be equal.");
   }
 
-  if(cfg.rangeIterZ.size() != cfg.nBinsCotThetaIterZ.size())
+  if(m_cfg.rangeIterZ.size() != m_cfg.nBinsCotThetaIterZ.size())
   {
     ACTS_ERROR("size of the rangeIterZ is "
-              << cfg.rangeIterZ.size()
+              << m_cfg.rangeIterZ.size()
               << " but size of the nBinsCotThetaIterZ vector is "
-              << cfg.nBinsCotThetaIterZ.size()
+              << m_cfg.nBinsCotThetaIterZ.size()
               <<"; these two have to be equal.");
   }
 }
 
 template <typename spacepoint_t>
-Acts::Result<Acts::Vector3>
+Acts::Result<Acts::Vertex>
 Acts::HoughVertexFinder<spacepoint_t>::find(
   const std::vector<spacepoint_t>& spacepoints) const {
   
   if(spacepoints.size()==0)
   {
-    Acts::Result<Acts::Vector3>::failure(std::error_code());
+    Acts::Result<Acts::Vertex>::failure(std::error_code());
   }
 
   float absEtaRange=m_cfg.maxAbsEta;
@@ -60,8 +58,9 @@ Acts::HoughVertexFinder<spacepoint_t>::find(
     float addToTotalFrac = m_cfg.absEtaFractions.at(r);
     if((totalFrac+addToTotalFrac)*spacepoints.size()>m_cfg.targetSPs)
     {
-      float needOnly = (m_cfg.targetSPs-totalFrac*spacepoints.size())/addToTotalFrac;
+      float needOnly = (m_cfg.targetSPs-totalFrac*spacepoints.size())/(addToTotalFrac*spacepoints.size());
       absEtaRange = (r?m_cfg.absEtaRanges.at(r-1):0.) + (m_cfg.absEtaRanges.at(r)-(r?m_cfg.absEtaRanges.at(r-1):0.))*needOnly;
+      totalFrac += needOnly*addToTotalFrac;
       break;
     }
 
@@ -79,8 +78,7 @@ Acts::HoughVertexFinder<spacepoint_t>::find(
     binsNumDecrease = std::pow(m_cfg.binsCotThetaDecrease, std::log(m_cfg.targetSPs/(spacepoints.size()*totalFrac)));
   }
 
-  Acts::Vector3 vtx = m_cfg.defVtxPosition;
-
+  Acts::Vertex vtx{m_cfg.defVtxPosition};
   for(std::uint32_t iter=0;iter<m_cfg.rangeIterZ.size();++iter)
   {
     auto vtxNew = findHoughVertex(spacepoints,
@@ -90,28 +88,29 @@ Acts::HoughVertexFinder<spacepoint_t>::find(
     if(!vtxNew.ok())
     {
       // vertex not found
-      Acts::Result<Acts::Vector3>::failure(std::error_code());
+      return Acts::Result<Acts::Vertex>::failure(std::error_code());
     }
 
     vtx = vtxNew.value();
   }
 
-  return Acts::Result<Acts::Vector3>::success(vtx);
+  return Acts::Result<Acts::Vertex>::success(vtx);
 }
 
 
 template <typename spacepoint_t>
-Acts::Result<Acts::Vector3> Acts::HoughVertexFinder<spacepoint_t>::findHoughVertex(
+Acts::Result<Acts::Vertex> Acts::HoughVertexFinder<spacepoint_t>::findHoughVertex(
     const std::vector<spacepoint_t>& spacepoints,
-    Acts::Vector3 vtxOld, float rangeZ, std::uint32_t numZBins,
+    Acts::Vertex vtxOld, float rangeZ, std::uint32_t numZBins,
     float minCotTheta, float maxCotTheta, std::uint32_t numCotThetaBins) const {
 
   const float zBinSize = 2.*rangeZ/numZBins;
   const float invCotThetaBinSize = numCotThetaBins/(maxCotTheta-minCotTheta);
-  const float minZ=vtxOld[2]-rangeZ, maxZ=vtxOld[2]+rangeZ;
+  const float minZ=vtxOld.position().z()-rangeZ, maxZ=vtxOld.position().z()+rangeZ;
+  const float vtxOldX=vtxOld.position().x(), vtxOldY=vtxOld.position().y();
 
-  HoughHist houghHist(Axis(minZ, maxZ, numZBins),
-                      Axis(minCotTheta, maxCotTheta, numCotThetaBins));
+  HoughHist houghHist(HoughAxis(minZ, maxZ, numZBins),
+  HoughAxis(minCotTheta, maxCotTheta, numCotThetaBins));
 
   std::vector<std::uint32_t> houghZProjection(numZBins,0);
 
@@ -136,10 +135,10 @@ Acts::Result<Acts::Vector3> Acts::HoughVertexFinder<spacepoint_t>::findHoughVert
       }
     }
 
-    float sp_invr=1./std::sqrt((sp.x()-vtxOld[0])*(sp.x()-vtxOld[0]) + (sp.y()-vtxOld[1])*(sp.y()-vtxOld[1]));
+    float sp_invr=1./std::sqrt((sp.x()-vtxOldX)*(sp.x()-vtxOldX) + (sp.y()-vtxOldY)*(sp.y()-vtxOldY));
 
-    std::uint32_t zFrom = static_cast<std::uint32_t>(std::max(((sp.z()-maxCotTheta/sp_invr)-minZ)/zBinSize +1), 0);  
-    std::uint32_t zTo   = static_cast<std::uint32_t>(std::min(((sp.z()-minCotTheta/sp_invr)-minZ)/zBinSize), numZBins);
+    std::uint32_t zFrom = static_cast<std::uint32_t>(std::max(((sp.z()-maxCotTheta/sp_invr)-minZ)/zBinSize +1, 0.));  
+    std::uint32_t zTo   = static_cast<std::uint32_t>(std::min(((sp.z()-minCotTheta/sp_invr)-minZ)/zBinSize, 1.*numZBins));
 
     for(std::uint32_t zBin=zFrom;zBin<zTo;zBin++) {
       float cotTheta = (sp.z()-vtxZPositions[zBin])*sp_invr;
@@ -165,10 +164,11 @@ Acts::Result<Acts::Vector3> Acts::HoughVertexFinder<spacepoint_t>::findHoughVert
 
   auto vtxNewZ = findHoughPeak(houghZProjection, vtxZPositions, numZBins);
   if(vtxNewZ.ok()) {
-    return  Acts::Result<Acts::Vector3>::success({vtxOld[0],vtxOld[1],vtxNewZ.value()});
+    Acts::Vertex newVertex(Vector3{vtxOldX,vtxOldY,vtxNewZ.value()});
+    return  Acts::Result<Acts::Vertex>::success(newVertex);
   }
 
-  return Acts::Result<Acts::Vector3>::failure(std::error_code());
+  return Acts::Result<Acts::Vertex>::failure(std::error_code());
 }
 
 
@@ -187,7 +187,7 @@ Acts::Result<float> Acts::HoughVertexFinder<spacepoint_t>::findHoughPeak(const s
       zBin<=std::min(numZBins-1,maxZBin+m_cfg.peakWidth); 
       ++zBin) {
     sumEntries += std::max(houghZProjection.at(zBin)-avg, 0.f);
-    meanZPeak   += vtxZPositions[zBin]*std::max<std::uint32_t>(houghZProjection.at(zBin)-avg, 0.);
+    meanZPeak   += vtxZPositions[zBin]*std::max(houghZProjection.at(zBin)-avg, 0.f);
   }
 
   if(sumEntries!=0.)
