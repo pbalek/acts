@@ -302,6 +302,7 @@ def addSeeding(
     outputDirCsv: Optional[Union[Path, str]] = None,
     logLevel: Optional[acts.logging.Level] = None,
     rnd: Optional[acts.examples.RandomNumbers] = None,
+    tolerance: Optional[float] = 3.33,
 ) -> None:
     """This function steers the seeding
     Parameters
@@ -379,6 +380,9 @@ def addSeeding(
         spacePoints = addSpacePointsMaking(
             s, trackingGeometry, geoSelectionConfigFile, logLevel
         )
+
+        addHoughVertexFinding(s, outputDirRoot=outputDirRoot)
+
         # Run either: truth track finding or seeding
         if seedingAlgorithm == SeedingAlgorithm.TruthEstimated:
             logger.info("Using truth track finding from space points for seeding")
@@ -400,6 +404,7 @@ def addSeeding(
                 seedFilterConfigArg,
                 spacePointGridConfigArg,
                 logLevel,
+                tolerance=tolerance,
             )
         elif seedingAlgorithm == SeedingAlgorithm.Orthogonal:
             logger.info("Using orthogonal seeding")
@@ -666,6 +671,7 @@ def addStandardSeeding(
     spacePointGridConfigArg: SpacePointGridConfigArg,
     logLevel: acts.logging.Level = None,
     outputSeeds: str = "seeds",
+    tolerance: float = 2.22,
 ):
     """adds standard seeding
     For parameters description see addSeeding
@@ -805,6 +811,7 @@ def addStandardSeeding(
         seedFilterConfig=seedFilterConfig,
         seedFinderConfig=seedFinderConfig,
         seedFinderOptions=seedFinderOptions,
+        tolerance=tolerance,
     )
     sequence.addAlgorithm(seedingAlg)
 

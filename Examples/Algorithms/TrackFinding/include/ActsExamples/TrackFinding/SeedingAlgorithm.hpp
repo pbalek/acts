@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "Acts/Definitions/Units.hpp"
 #include "Acts/EventData/SpacePointContainer.hpp"
 #include "Acts/Seeding/SeedFilterConfig.hpp"
 #include "Acts/Seeding/SeedFinder.hpp"
@@ -15,6 +16,7 @@
 #include "Acts/Seeding/detail/CylindricalSpacePointGrid.hpp"
 #include "Acts/Utilities/GridBinFinder.hpp"
 #include "Acts/Utilities/Logger.hpp"
+#include "Acts/Vertexing/Vertex.hpp"
 #include "ActsExamples/EventData/SimSeed.hpp"
 #include "ActsExamples/EventData/SimSpacePoint.hpp"
 #include "ActsExamples/EventData/SpacePointContainer.hpp"
@@ -49,6 +51,8 @@ class SeedingAlgorithm final : public IAlgorithm {
     std::string outputSeeds;
 
     Acts::SeedFilterConfig seedFilterConfig;
+
+    float tolerance = 150.f * Acts::UnitConstants::mm;
 
     Acts::SeedFinderConfig<typename Acts::SpacePointContainer<
         ActsExamples::SpacePointContainer<std::vector<const SimSpacePoint*>>,
@@ -106,6 +110,7 @@ class SeedingAlgorithm final : public IAlgorithm {
       m_inputSpacePoints{};
 
   WriteDataHandle<SimSeedContainer> m_outputSeeds{this, "OutputSeeds"};
+  ReadDataHandle<std::vector<Acts::Vertex>> m_inputVertex{this, "fittedHoughVertices"};
 
   static inline bool itkFastTrackingCuts(float bottomRadius, float cotTheta) {
     static float rMin = 45.;
