@@ -193,6 +193,9 @@ SeedingAlgorithm::SeedingAlgorithm(SeedingAlgorithm::Config cfg,
 }
 
 ProcessCode SeedingAlgorithm::execute(const AlgorithmContext& ctx) const {
+
+  auto t1 = std::chrono::high_resolution_clock::now();
+
   // construct the combined input container of space point pointers from all
   // configured input sources.
   // pre-compute the total size required so we only need to allocate once
@@ -201,15 +204,15 @@ ProcessCode SeedingAlgorithm::execute(const AlgorithmContext& ctx) const {
     nSpacePoints += (*isp)(ctx).size();
   }
 
-  ACTS_INFO("SeedingAlgorithm: " << nSpacePoints << " spacepoints");
+  // ACTS_INFO("SeedingAlgorithm: " << nSpacePoints << " spacepoints");
   // m_seedFinder.setCustomcCollisionRegion(20.2309 -30.0, 20.2309 +30.0);
 
-  auto houghVertex = m_inputVertex(ctx);
-  float z_position = (houghVertex.size() > 0 ? houghVertex.at(0).position()[2] : 0.);
-  m_seedFinder.setCustomcCollisionRegion(z_position -m_cfg.tolerance, z_position + m_cfg.tolerance);
+  // auto houghVertex = m_inputVertex(ctx);
+  // float z_position = (houghVertex.size() > 0 ? houghVertex.at(0).position()[2] : 0.);
+  // m_seedFinder.setCustomcCollisionRegion(z_position -m_cfg.tolerance, z_position + m_cfg.tolerance);
 
-  ACTS_INFO("tolerance " << m_cfg.tolerance );
-  ACTS_INFO("z_position " << z_position);
+  // ACTS_INFO("tolerance " << m_cfg.tolerance );
+  // ACTS_INFO("z_position " << z_position);
 
   std::vector<const SimSpacePoint*> spacePointPtrs;
   spacePointPtrs.reserve(nSpacePoints);
@@ -288,8 +291,8 @@ ProcessCode SeedingAlgorithm::execute(const AlgorithmContext& ctx) const {
                                      middle, top, rMiddleSPRange);
   }
 
-  ACTS_INFO("Created " << seeds.size() << " track seeds from "
-                        << spacePointPtrs.size() << " space points");
+  // ACTS_INFO("Created " << seeds.size() << " track seeds from "
+                        // << spacePointPtrs.size() << " space points");
 
   // static thread_local std::vector<seed_type> filtered_seeds;
   // filtered_seeds.clear();
@@ -338,6 +341,9 @@ ProcessCode SeedingAlgorithm::execute(const AlgorithmContext& ctx) const {
     SeedContainerForStorage.back().setVertexZ(seed.z());
     SeedContainerForStorage.back().setQuality(seed.seedQuality());
   }
+
+  auto t2 = std::chrono::high_resolution_clock::now();
+  ACTS_INFO("SeedingAlgorithm "<<spacePointPtrs.size()<<" "<<(t2 - t1).count() / 1e6);
 
   m_outputSeeds(ctx, std::move(SeedContainerForStorage));
   return ProcessCode::SUCCESS;

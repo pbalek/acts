@@ -51,11 +51,12 @@ ProcessCode HoughVertexFinderAlgorithm::execute(
   auto vtx = houghVertexFinder.find(inputSpacepoints);
   auto t2 = std::chrono::high_resolution_clock::now();
   if (vtx.ok()) {
-    ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
-                                                << " ms");
-    ACTS_INFO("Found vertex at x = " << vtx.value()[0]
-                                     << "mm, y = " << vtx.value()[1]
-                                     << "mm, z = " << vtx.value()[2] << "mm");
+    ACTS_INFO("HoughVertexFinderAlgorithm "<<inputSpacepoints.size()<<" "<<(t2 - t1).count() / 1e6);
+    // ACTS_INFO("Found a vertex in the event in " << (t2 - t1).count() / 1e6
+    //                                             << " ms");
+    // ACTS_INFO("Found vertex at x = " << vtx.value()[0]
+    //                                  << "mm, y = " << vtx.value()[1]
+    //                                  << "mm, z = " << vtx.value()[2] << "mm");
 
     std::vector<Acts::Vertex> vertexCollection;
     vertexCollection.emplace_back(vtx.value());
@@ -63,8 +64,9 @@ ProcessCode HoughVertexFinderAlgorithm::execute(
     // store found vertices
     m_outputVertices(ctx, std::move(vertexCollection));
   } else {
-    ACTS_INFO("Not found a vertex in the event after "
-              << (t2 - t1).count() / 1e6 << " ms");
+    // ACTS_INFO("Not found a vertex in the event after "
+              // << (t2 - t1).count() / 1e6 << " ms");
+    ACTS_INFO("HoughVertexFinderAlgorithm "<<inputSpacepoints.size()<<" "<<(t2 - t1).count() / 1e6);
     std::vector<Acts::Vertex> vertexCollection;
     m_outputVertices(ctx, std::move(vertexCollection));
   }

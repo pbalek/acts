@@ -124,9 +124,9 @@ double pull(double diff, double variance, const std::string& variableStr,
     } else {
       tempStr = "before";
     }
-    ACTS_WARNING("Nonpositive variance " << tempStr << " vertex fit: Var("
-                                         << variableStr << ") = " << variance
-                                         << " <= 0.");
+    // ACTS_WARNING("Nonpositive variance " << tempStr << " vertex fit: Var("
+    //                                      << variableStr << ") = " << variance
+    //                                      << " <= 0.");
     return nan;
   }
   double std = std::sqrt(variance);

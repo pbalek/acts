@@ -325,7 +325,7 @@ Result<void> extrapolateTrackToReferenceSurface(
           parameters, referenceSurface, options);
 
   if (!propagateResult.ok()) {
-    ACTS_ERROR("failed to extrapolate track: " << propagateResult.error());
+    // ACTS_ERROR("failed to extrapolate track: " << propagateResult.error());
     return propagateResult.error();
   }
 

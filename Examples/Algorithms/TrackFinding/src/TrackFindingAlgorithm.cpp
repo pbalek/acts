@@ -41,6 +41,7 @@
 #include "ActsExamples/Framework/ProcessCode.hpp"
 
 #include <cmath>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -291,6 +292,7 @@ TrackFindingAlgorithm::TrackFindingAlgorithm(Config config,
         m_cfg.trackSelectorCfg.value());
   }
 
+  m_inputSpacepoints.initialize("spacepoints");
   m_inputMeasurements.initialize(m_cfg.inputMeasurements);
   m_inputInitialTrackParameters.initialize(m_cfg.inputInitialTrackParameters);
   m_inputSeeds.maybeInitialize(m_cfg.inputSeeds);
@@ -299,6 +301,7 @@ TrackFindingAlgorithm::TrackFindingAlgorithm(Config config,
 
 ProcessCode TrackFindingAlgorithm::execute(const AlgorithmContext& ctx) const {
   // Read input data
+  auto t1 = std::chrono::high_resolution_clock::now();
   const auto& measurements = m_inputMeasurements(ctx);
   const auto& initialParameters = m_inputInitialTrackParameters(ctx);
   const SimSeedContainer* seeds = nullptr;
@@ -621,10 +624,10 @@ ProcessCode TrackFindingAlgorithm::execute(const AlgorithmContext& ctx) const {
                         logger());
                 if (!secondExtrapolationResult.ok()) {
                   m_nFailedExtrapolation++;
-                  ACTS_ERROR("Second extrapolation for seed "
-                             << iSeed << " and track " << secondTrack.index()
-                             << " failed with error "
-                             << secondExtrapolationResult.error());
+                  // ACTS_ERROR("Second extrapolation for seed "
+                  //            << iSeed << " and track " << secondTrack.index()
+                  //            << " failed with error "
+                  //            << secondExtrapolationResult.error());
                   continue;
                 }
               }
@@ -651,10 +654,10 @@ ProcessCode TrackFindingAlgorithm::execute(const AlgorithmContext& ctx) const {
                 m_cfg.extrapolationStrategy, logger());
         if (!firstExtrapolationResult.ok()) {
           m_nFailedExtrapolation++;
-          ACTS_ERROR("Extrapolation for seed "
-                     << iSeed << " and track " << firstTrack.index()
-                     << " failed with error "
-                     << firstExtrapolationResult.error());
+          // ACTS_ERROR("Extrapolation for seed "
+          //            << iSeed << " and track " << firstTrack.index()
+          //            << " failed with error "
+          //            << firstExtrapolationResult.error());
           continue;
         }
 
@@ -675,6 +678,10 @@ ProcessCode TrackFindingAlgorithm::execute(const AlgorithmContext& ctx) const {
 
   m_memoryStatistics.local().hist +=
       tracks.trackStateContainer().statistics().hist;
+    
+  auto t2 = std::chrono::high_resolution_clock::now();
+  const std::vector<SimSpacePoint>& inputSpacepoints = m_inputSpacepoints(ctx);
+  ACTS_INFO("TrackFindingAlgorithm "<<inputSpacepoints.size()<<" "<<(t2 - t1).count() / 1e6);
 
   auto constTrackStateContainer =
       std::make_shared<Acts::ConstVectorMultiTrajectory>(

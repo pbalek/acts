@@ -162,7 +162,8 @@ class TrackFindingAlgorithm final : public IAlgorithm {
  private:
   Config m_cfg;
   std::optional<Acts::TrackSelector> m_trackSelector;
-
+  ReadDataHandle<SimSpacePointContainer> m_inputSpacepoints{this,
+                                                            "spacepoints"};
   ReadDataHandle<MeasurementContainer> m_inputMeasurements{this,
                                                            "InputMeasurements"};
   ReadDataHandle<TrackParametersContainer> m_inputInitialTrackParameters{
